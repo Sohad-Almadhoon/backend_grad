@@ -1,0 +1,67 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id       Int       @id @default(autoincrement())
+  name     String
+  email    String    @unique
+  password String
+  isSeller Boolean   @default(false)
+  cars     Car[] // Cars listed by the user
+  comments Comment[]
+  cart     Cart[]
+  orders   Order[]
+}
+
+model Car {
+  id         Int       @id @default(autoincrement())
+  name       String
+  color      String
+  price      Float? // Only applicable if for sale
+  rentPerDay Float? // Only applicable if for rent
+  isForSale  Boolean
+  isForRent  Boolean
+  userId     Int // Reference to the seller
+  user       User      @relation(fields: [userId], references: [id])
+  comments   Comment[]
+  carts      Cart[] // Relation with Cart
+  orders     Order[] // Relation with Order
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  content   String
+  carId     Int
+  car       Car      @relation(fields: [carId], references: [id])
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model Cart {
+  id         Int   @id @default(autoincrement())
+  userId     Int
+  user       User  @relation(fields: [userId], references: [id])
+  carId      Int
+  car        Car   @relation(fields: [carId], references: [id])
+  quantity   Int   @default(1)
+  totalPrice Float
+}
+
+model Order {
+  id            Int      @id @default(autoincrement())
+  userId        Int
+  user          User     @relation(fields: [userId], references: [id])
+  carId         Int
+  car           Car      @relation(fields: [carId], references: [id])
+  orderType     String // 'buy' or 'rent'
+  totalPrice    Float
+  paymentStatus Boolean  @default(false)
+  createdAt     DateTime @default(now())
+}
