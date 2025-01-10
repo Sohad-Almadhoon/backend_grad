@@ -14,6 +14,6 @@ router.get("/", getCars); // Get all cars
 router.get("/:id", getCarById); // Get car details
 router.post("/", verifyToken, createCar); // Add a new car
 router.delete("/:id", verifyToken, deleteCar); // Delete a car
-router.post("/comments", addComment); // Add a comment to a car
+router.post("/:id/comments", verifyToken, addComment); // Add a comment to a car
 
 export default router;

@@ -62,7 +62,10 @@ const deleteCar = async (req, res) => {
 };
 
 const addComment = async (req, res) => {
-  const { carId, content, userId } = req.body;
+  const { content } = req.body;
+  const userId = req.user.id;
+  const { id:carId } = req.params;
+  console.log(content, userId, carId);
   try {
     const comment = await prisma.comment.create({
       data: { carId: parseInt(carId), content, userId },
