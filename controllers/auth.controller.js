@@ -2,7 +2,7 @@ import bcrypt from "bcrypt";
 import prisma from "../utils/db.js";
 import jwt from "jsonwebtoken";
 const register = async (req, res) => {
-  const { name, email, password, isSeller } = req.body;
+  const { email, password } = req.body;
   
   try {
     const existingUser = await prisma.user.findUnique({
@@ -20,10 +20,9 @@ const register = async (req, res) => {
     // Create a new user
     const user = await prisma.user.create({
       data: {
-        name,
+        ...req.body,  
         email,
         password: hashedPassword,
-        isSeller,
       },
     });
 

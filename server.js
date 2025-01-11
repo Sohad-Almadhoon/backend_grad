@@ -4,6 +4,9 @@ import cors from "cors";
 import bodyParser from "body-parser";
 import authRoutes from './routes/auth.router.js';
 import carRoutes from './routes/car.router.js';
+import uploadRoutes from './routes/upload.route.js';
+import orderRoutes from './routes/order.route.js';
+import cartRoutes from './routes/cart.route.js';
 import errorHandler from './middlewares/errorMiddleware.js';
 const app = express();
 dotenv.config();
@@ -18,11 +21,15 @@ app.use(
 app.use(bodyParser.json());
 
 const routes = {
-  "/api/warmup": (req, res) => {
+  "/api/warmup": (_, res) => {
     res.send("Server is running")
   },
   "/api/auth": authRoutes,
   "/api/cars": carRoutes,
+  "/api/upload": uploadRoutes,
+  "/api/orders": orderRoutes,
+  "/api/carts": cartRoutes,
+  
 };
 Object.keys(routes).forEach((route) => app.use(route, routes[route]));
 

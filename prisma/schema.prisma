@@ -20,18 +20,20 @@ model User {
 }
 
 model Car {
-  id         Int       @id @default(autoincrement())
-  name       String
-  color      String
-  price      Float? // Only applicable if for sale
-  rentPerDay Float? // Only applicable if for rent
-  isForSale  Boolean
-  isForRent  Boolean
-  userId     Int // Reference to the seller
-  user       User      @relation(fields: [userId], references: [id])
-  comments   Comment[]
-  carts      Cart[] // Relation with Cart
-  orders     Order[] // Relation with Order
+  id          Int       @id @default(autoincrement())
+  name        String
+  color       String
+  description String    @db.Text
+  imageUrl    String
+  price       Float? // Only applicable if for sale
+  rentPerDay  Float? // Only applicable if for rent
+  isForSale   Boolean
+  isForRent   Boolean
+  userId      Int // Reference to the seller
+  user        User      @relation(fields: [userId], references: [id])
+  comments    Comment[]
+  carts       Cart[] // Relation with Cart
+  orders      Order[] // Relation with Order
 }
 
 model Comment {
@@ -62,6 +64,7 @@ model Order {
   car           Car      @relation(fields: [carId], references: [id])
   orderType     String // 'buy' or 'rent'
   totalPrice    Float
+  address       String
   paymentStatus Boolean  @default(false)
   createdAt     DateTime @default(now())
 }

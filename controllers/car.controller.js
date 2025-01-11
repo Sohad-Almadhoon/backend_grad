@@ -34,15 +34,17 @@ const getCarById = async (req, res) => {
 };
 
 const createCar = async (req, res) => {
-  const { name, color, price, rentPerDay, isForSale, isForRent } = req.body;
   const userId = req.user.id;
   try {
     const car = await prisma.car.create({
-      data: { name, color, price, rentPerDay, isForSale, isForRent, userId },
+      data: {
+        ...req.body,
+        userId : parseInt(userId),
+      },
     });
     res.status(201).json(car);
   } catch (error) {
-    res.status(500).json({ error: "Failed to add car." });
+    res.status(500).json({ error: "Failed to add car." , error });
   }
 };
 
@@ -64,7 +66,7 @@ const deleteCar = async (req, res) => {
 const addComment = async (req, res) => {
   const { content } = req.body;
   const userId = req.user.id;
-  const { id:carId } = req.params;
+  const { id: carId } = req.params;
   console.log(content, userId, carId);
   try {
     const comment = await prisma.comment.create({
