@@ -5,6 +5,7 @@ import {
   createCar,
   deleteCar,
   addComment,
+  updateCar,
 } from '../controllers/car.controller.js';
 import verifyToken from "../middlewares/verifyToken.js";
 
