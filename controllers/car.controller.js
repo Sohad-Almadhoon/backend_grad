@@ -80,5 +80,21 @@ const addComment = async (req, res) => {
     res.status(500).json({ error: "Failed to add comment." });
   }
 };
+const updateCar = async (req, res) => {
+  const { id } = req.params;
+  const updates = req.body;
 
-export { getCars, getCarById, createCar, deleteCar, addComment };
+  try {
+    const updatedCar = await prisma.car.update({
+      where: { id: parseInt(id) },
+      data: updates,
+    });
+
+    res.json({ message: "Car updated successfully", updatedCar });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to update car" });
+  }
+};
+
+export { getCars, getCarById, createCar, deleteCar, addComment, updateCar };
