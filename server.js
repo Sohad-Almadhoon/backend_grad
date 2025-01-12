@@ -7,6 +7,7 @@ import carRoutes from './routes/car.router.js';
 import uploadRoutes from './routes/upload.route.js';
 import orderRoutes from './routes/order.route.js';
 import cartRoutes from './routes/cart.route.js';
+import userRoutes from './routes/user.route.js';
 import errorHandler from './middlewares/errorMiddleware.js';
 const app = express();
 dotenv.config();
@@ -29,7 +30,7 @@ const routes = {
   "/api/upload": uploadRoutes,
   "/api/orders": orderRoutes,
   "/api/carts": cartRoutes,
-  
+  "/api/users": userRoutes,
 };
 Object.keys(routes).forEach((route) => app.use(route, routes[route]));
 

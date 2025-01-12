@@ -11,7 +11,10 @@ const getCars = async (req, res) => {
         ...(isForRent && { isForRent: isForRent === "true" }),
       },
     });
-    res.status(200).json(cars);
+    res.status(200).json({
+      length: cars.length,
+      cars
+    });
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch cars." });
   }
