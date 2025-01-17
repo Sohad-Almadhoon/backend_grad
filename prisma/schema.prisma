@@ -8,63 +8,98 @@ datasource db {
 }
 
 model User {
-  id       Int       @id @default(autoincrement())
-  name     String
-  email    String    @unique
-  password String
-  isSeller Boolean   @default(false)
-  cars     Car[] // Cars listed by the user
-  comments Comment[]
-  cart     Cart[]
-  orders   Order[]
+  id         Int       @id @default(autoincrement())
+  username   String    @unique
+  email      String    @unique
+  password   String
+  whatsapp   String?
+  country    String?
+  isSeller   Boolean   
+  cars       Car[]     // Cars listed by the user (if seller)
+  orders     Order[]   // Orders placed by the user (if buyer)
+  cartItems  Cart[]    // Cart items of the user (if buyer)
+  reviews    Review[]  
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 }
 
 model Car {
   id          Int       @id @default(autoincrement())
-  name        String
+  model       String
+  year        Int
   color       String
-  description String    @db.Text
-  imageUrl    String
-  price       Float? // Only applicable if for sale
-  rentPerDay  Float? // Only applicable if for rent
-  isForSale   Boolean
-  isForRent   Boolean
-  userId      Int // Reference to the seller
-  user        User      @relation(fields: [userId], references: [id])
-  comments    Comment[]
-  carts       Cart[] // Relation with Cart
-  orders      Order[] // Relation with Order
+  coverImage  String
+  images      String[]  
+  fuelType    String
+  transmission Transmission
+  price       Float
+  quantity    Int
+  notes       String?
+  sellerId    Int
+  seller      User      @relation(fields: [sellerId], references: [id])
+  reviews     Review[] 
+  orders      Order[]
+  cartItems   Cart[]  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }
 
-model Comment {
-  id        Int      @id @default(autoincrement())
-  content   String
-  carId     Int
-  car       Car      @relation(fields: [carId], references: [id])
-  userId    Int
-  user      User     @relation(fields: [userId], references: [id])
-  createdAt DateTime @default(now())
-}
-
-model Cart {
-  id         Int   @id @default(autoincrement())
-  userId     Int
-  user       User  @relation(fields: [userId], references: [id])
-  carId      Int
-  car        Car   @relation(fields: [carId], references: [id])
-  quantity   Int   @default(1)
-  totalPrice Float
+enum Transmission {
+  AUTOMATIC
+  MANUAL
 }
 
 model Order {
-  id            Int      @id @default(autoincrement())
-  userId        Int
-  user          User     @relation(fields: [userId], references: [id])
-  carId         Int
-  car           Car      @relation(fields: [carId], references: [id])
-  orderType     String // 'buy' or 'rent'
-  totalPrice    Float
-  address       String
-  paymentStatus Boolean  @default(false)
-  createdAt     DateTime @default(now())
+  id            Int       @id @default(autoincrement())
+  isCompleted   Boolean
+  paymentIntent String
+  seller        User      @relation(fields: [sellerId], references: [id], name: "OrderToSeller")
+  buyer         User      @relation(fields: [buyerId], references: [id], name: "OrderToBuyer")
+  sellerId      Int
+  buyerId       Int
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  sellerOrders  Order[]   @relation(name: "OrderToSeller", fields: [sellerId], references: [id])
+  buyerOrders   Order[]   @relation(name: "OrderToBuyer", fields: [buyerId], references: [id])
+}
+
+model Review {
+  id         Int       @id @default(autoincrement())
+  star       Star
+  desc       String
+  carId      Int
+  car        Car       @relation(fields: [carId], references: [id])
+  buyerId    Int
+  user       User      @relation(fields: [buyerId], references: [id])
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+}
+
+enum Star {
+  ONE
+  TWO
+  THREE
+  FOUR
+  FIVE
+}
+
+model Cart {
+  id         Int       @id @default(autoincrement())
+  carId      Int
+  car        Car       @relation(fields: [carId], references: [id])
+  buyerId    Int       
+  buyer      User      @relation(fields: [buyerId], references: [id])
+  quantity   Int       @default(1)
+  totalPrice Float
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Favorite {
+  id        Int      @id @default(autoincrement())
+  carId     Int
+  buyerId   Int      
+  buyer     User     @relation(fields: [buyerId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
