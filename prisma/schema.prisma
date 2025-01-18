@@ -53,14 +53,14 @@ enum Transmission {
 model Order {
   id            Int      @id @default(autoincrement())
   isCompleted   Boolean  @default(false)
-  paymentIntent String
+  paymentIntent String? // initially, payemnt for last thing
   buyer         User     @relation(fields: [buyerId], references: [id])
   buyerId       Int
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   cartItems     Cart[]
   Car           Car     @relation(fields: [carId], references: [id])
-  carId         Int
+  carId         Int 
 }
 
 model Review {
@@ -70,7 +70,7 @@ model Review {
   carId     Int
   car       Car      @relation(fields: [carId], references: [id])
   buyerId   Int
-  user      User     @relation(fields: [buyerId], references: [id])
+  buyer      User     @relation(fields: [buyerId], references: [id])
   createdAt DateTime @default(now())
 
   @@unique([carId, buyerId])

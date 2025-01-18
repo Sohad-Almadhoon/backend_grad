@@ -1,9 +1,9 @@
 import prisma from "../utils/db.js";
 const getCartItems = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const buyerId = req.user.id;
     const cartItems = await prisma.cart.findMany({
-      where: { userId },
+      where: { buyerId },
       include: {
         car: true,
       },
@@ -16,11 +16,11 @@ const getCartItems = async (req, res) => {
 
 const addItemToCart = async (req, res) => {
   try {
-     const userId = req.user.id;
+     const buyerId = req.user.id;
 
     const cartItem = await prisma.cart.create({
       data: {
-        userId,
+        buyerId,
         ...req.body,
       },
     });
