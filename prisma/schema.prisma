@@ -12,8 +12,7 @@ model User {
   username  String     @unique
   email     String     @unique
   password  String
-  whatsapp  String?
-  country   String?
+  whatsapp  String
   isSeller  Boolean
   cars      Car[]
   orders    Order[]
@@ -25,13 +24,20 @@ model User {
 
 model Car {
   id           Int          @id @default(autoincrement())
-  model        String
+  brand        String
   year         Int
   color        String
   coverImage   String
   images       String[]
   fuelType     String
   transmission Transmission
+  battery      Int
+  speed        Float
+  seats        Int
+  climate      Int
+  range        Decimal
+  country      String
+  carType      String
   price        Float
   quantity     Int
   notes        String?
@@ -42,25 +48,26 @@ model Car {
   cartItems    Cart[]
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
-  Favorite     Favorite[]
+  favorites     Favorite[]
 }
 
 enum Transmission {
-  AUTOMATIC
-  MANUAL
+  Automatic
+  Manual
 }
 
 model Order {
   id            Int      @id @default(autoincrement())
-  isCompleted   Boolean  @default(false)
-  paymentIntent String? // initially, payemnt for last thing
+  paymentIntent String
+  totalPrice    Decimal
   buyer         User     @relation(fields: [buyerId], references: [id])
   buyerId       Int
   createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  cartItems     Cart[]
+  cartItemId    Int
+  cartItem      Cart @relation(fields: [cartItemId], references: [id])
   Car           Car     @relation(fields: [carId], references: [id])
   carId         Int 
+  @@unique([cartItemId])
 }
 
 model Review {
@@ -77,11 +84,11 @@ model Review {
 }
 
 enum Star {
-  ONE
-  TWO
-  THREE
-  FOUR
-  FIVE
+  One
+  Two
+  Three
+  Four
+  Five
 }
 
 model Cart {
@@ -94,7 +101,7 @@ model Cart {
   totalPrice Float
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
-  Order      Order?   @relation(fields: [orderId], references: [id])
+  Order      Order?   @relation
   orderId    Int?
 }
 

@@ -11,12 +11,12 @@ const router = express.Router();
 
 // Payment creation route
 router.post("/", verifyToken, async (req, res) => {
-  const { id } = req.user;
+  const id = req.userId;
   if (!id) {
     return res.status(400).json({ error: "User ID is required." });
   }
   try {
-    const user = await prisma.users.findUnique({
+    const user = await prisma.user.findUnique({
       where: { id },
     });
     if (!user) {
@@ -30,7 +30,7 @@ router.post("/", verifyToken, async (req, res) => {
           price_data: {
             currency: "usd",
             product_data: {
-              name: "Bookshop Subscription",
+              name: "Car Subscription",
             },
             unit_amount: 500,
           },

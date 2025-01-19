@@ -1,13 +1,17 @@
 import prisma from "../utils/db.js";
 
 const getCars = async (req, res) => {
-  const { model, color, fuelType } = req.query;
+  const { country, brand, color, minPrice, maxPrice } = req.query;
   try {
     const cars = await prisma.car.findMany({
       where: {
-        ...(model && { model: { contains: model, mode: "insensitive" } }),
+        ...(country && { model: { contains: country, mode: "insensitive" } }),
         ...(color && { color: { equals: color, mode: "insensitive" } }),
-        ...(fuelType && { color: { equals: fuelType, mode: "insensitive" } }),
+        ...(brand && {
+          brand: { equals: brand, mode: "insensitive" },
+        }),
+        ...(minPrice && { price: { gte: parseFloat(minPrice) } }),
+        ...(maxPrice && { price: { lte: parseFloat(maxPrice) } }),
       },
     });
     res.status(200).json({
@@ -35,14 +39,15 @@ const getCarById = async (req, res) => {
 };
 
 const createCar = async (req, res) => {
-  const { userId, isSeller } = req.user;
-  if (!isSeller)
-    res.status(403).json({ error: "You are not allowed to create a car!" });
+  if (!req.isSeller)
+    return res
+      .status(403)
+      .json({ error: "You are not allowed to create a car!" });
   try {
     const car = await prisma.car.create({
       data: {
         ...req.body,
-        userId: parseInt(userId),
+        sellerId: req.userId,
       },
     });
     res.status(201).json(car);
@@ -55,7 +60,9 @@ const deleteCar = async (req, res) => {
   const { id } = req.params;
   const { isSeller } = req.user;
   if (!isSeller)
-    res.status(403).json({ error: "You are not allowed to create a car!" });
+    return res
+      .status(403)
+      .json({ error: "You are not allowed to create a car!" });
   try {
     const car = await prisma.car.findUnique({ where: { id: parseInt(id) } });
     if (!car) {
@@ -70,23 +77,23 @@ const deleteCar = async (req, res) => {
 };
 
 const addReview = async (req, res) => {
-  const buyerId = req.user.id;
   const { id: carId } = req.params;
 
   try {
     const existingReview = await prisma.review.findFirst({
       where: {
-        buyerId,
+        buyerId: req.userId,
         carId,
       },
     });
     if (existingReview)
       return res
         .status(400)
-        .json({ message: "You have already reviewd this car!." });
+        .json({ message: "You have already reviewed this car!." });
 
+    console.log({ carId: parseInt(carId), ...req.body, buyerId: req.userId });
     const review = await prisma.review.create({
-      data: { carId: parseInt(carId), ...req.body, buyerId },
+      data: { carId: parseInt(carId), ...req.body, buyerId: req.userId },
     });
     res.status(201).json(review);
   } catch (error) {
@@ -102,10 +109,14 @@ const getCarReviews = async (req, res) => {
         carId: parseInt(id),
       },
       include: {
-        buyer: true,
+        buyer: {
+          select: {
+            username: true,
+          },
+        },
       },
     });
-    res.status(201).json(reviews);
+    res.status(200).json(reviews);
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch reviews." });
   }

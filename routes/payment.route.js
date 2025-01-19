@@ -12,12 +12,12 @@ router.get("/success", async (req, res) => {
   try {
     const session = await stripe.checkout.sessions.retrieve(session_id);
     if (session.payment_status === "paid") {
-      const user = await prisma.users.findUnique({
+      const user = await prisma.user.findUnique({
         where: { email: session.customer_email },
       });
 
       if (user) {
-        await prisma.users.update({
+        await prisma.user.update({
           where: { id: user.id },
           data: { has_paid: true},
         });
@@ -25,10 +25,7 @@ router.get("/success", async (req, res) => {
         console.log("User not found");
       }
 
-      res.status(200).json({
-         has_paid:true,
-        amountTotal: session.amount_total / 100,
-      });
+      res.status(200).json({});
       
     } else {
       res.status(400).send("Payment failed or incomplete.");
