@@ -1,7 +1,7 @@
 import prisma from "../utils/db.js";
 const getCartItems = async (req, res) => {
   try {
-    const buyerId = req.user.id;
+    const buyerId = req.userId;
     const cartItems = await prisma.cart.findMany({
       where: { buyerId },
       include: {
@@ -16,8 +16,7 @@ const getCartItems = async (req, res) => {
 
 const addItemToCart = async (req, res) => {
   try {
-     const buyerId = req.user.id;
-
+    const buyerId = req.userId;
     const cartItem = await prisma.cart.create({
       data: {
         buyerId,
@@ -37,14 +36,15 @@ const updateCartItem = async (req, res) => {
 
     const cartItem = await prisma.cart.findUnique({
       where: { id: parseInt(id) },
-      include: { car: true }, 
+      include: { car: true },
     });
-
-    if (!cartItem) {
-      return res.status(404).json({ error: "Cart item not found" });
+    if (!cartItem || cartItem.buyerId !== req.userId) {
+      return res
+        .status(404)
+        .json({ error: "Cart item not found or access denied." });
     }
 
-    const newTotalPrice = cartItem.car.price * quantity; 
+    const newTotalPrice = cartItem.car.price * quantity;
     const updatedCartItem = await prisma.cart.update({
       where: { id: parseInt(id) },
       data: {
@@ -59,10 +59,17 @@ const updateCartItem = async (req, res) => {
   }
 };
 
-
 const removeItemFromCart = async (req, res) => {
   try {
     const { id } = req.params;
+    const cartItem = await prisma.cart.findUnique({
+      where: { id: parseInt(id) },
+    });
+    if (!cartItem || cartItem.buyerId !== req.userId) {
+      return res
+        .status(404)
+        .json({ error: "Cart item not found or access denied." });
+    }
     await prisma.cart.delete({
       where: { id: parseInt(id) },
     });

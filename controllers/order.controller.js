@@ -1,38 +1,75 @@
 import prisma from "../utils/db.js";
 
 const createOrder = async (req, res) => {
+  const { carId, quantity } = req.body;
+
   try {
-    const { cartItems } = req.body;
-    const order = await prisma.order.create({
-      data: {
-        cartItems,
-      },
-      include: {
-        buyer,
-      },
+    const car = await prisma.car.findUnique({
+      where: { id: carId },
     });
 
-    return res.status(201).json(order);
+    if (!car) {
+      return res.status(404).json({ error: "Car not found." });
+    }
+
+    if (car.quantity < quantity) {
+      return res
+        .status(400)
+        .json({ error: "Insufficient car quantity available." });
+    }
+
+    const order = await prisma.$transaction(async (tx) => {
+      const newOrder = await tx.order.create({
+        data: {
+          carId,
+          buyerId: req.userId,
+          quantity,
+          totalPrice: car.price * quantity,
+        },
+      });
+
+      await tx.car.update({
+        where: { id: carId },
+        data: {
+          quantity: car.quantity - quantity,
+          quantitySold: car.quantitySold + quantity,
+        },
+      });
+
+      return newOrder;
+    });
+
+    res.status(201).json({ message: "Order created successfully.", order });
   } catch (error) {
-    return res.status(500).json({ error: error.message });
+    res
+      .status(500)
+      .json({ error: "Failed to create order.", details: error.message });
   }
 };
 
 const getAllOrders = async (req, res) => {
-  const { isSeller } = req.user;
-  if (!isSeller)
-    res.status(403).json({ error: "You are not allowed to see orders!" });
+  if (!req.isSeller)
+    return res
+      .status(403)
+      .json({ error: "You are not allowed to see orders!" });
   try {
     const orders = await prisma.order.findMany({
+      where: {
+       buyerId: req.userId 
+      },
       include: {
         car: {
           select: {
-            model: true,
+            brand: true,
             coverImage: true,
             price: true,
           },
         },
-        buyer: true,
+        buyer: {
+          select: {
+            username: true,
+          },
+        },
       },
     });
 
@@ -41,23 +78,5 @@ const getAllOrders = async (req, res) => {
     return res.status(500).json({ error: error.message });
   }
 };
-const updateOrderPaymentStatus = async (req, res) => {
-  try {
-    const { id } = req.params;
 
-    const order = await prisma.order.update({
-      where: { id: parseInt(id) },
-      data: req.body,
-    });
-
-    if (!order) {
-      return res.status(404).json({ message: "Order not found" });
-    }
-
-    return res.status(200).json(order);
-  } catch (error) {
-    return res.status(500).json({ error: error.message });
-  }
-};
-
-export { createOrder, getAllOrders, updateOrderPaymentStatus };
+export { createOrder, getAllOrders };

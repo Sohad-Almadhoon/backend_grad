@@ -1,6 +1,58 @@
 import prisma from "../utils/db.js";
 
-const fetchUserCars = async (req, res) => {
-  
+const fetchSellerCars = async (req, res) => {
+  try {
+    const cars = await prisma.car.findMany({
+      where: {
+        sellerId: req.userId,
+      }
+    });
+    res.status(200).json({
+      length: cars.length,
+      cars,
+    });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch cars." });
+  }
 };
-export { fetchUserCars };
+
+
+
+const fetchBuyerDetails = async (req, res) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: {
+        id: req.userId,
+      },
+      include: {
+        cars:true,
+      },
+    });
+    if (!user) {
+      return res.status(404).json({ error: "User not found." });
+    }
+    res.status(200).json(user);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch user details." });
+  }
+};
+const updateUserDetails = async (req, res) => {
+  try {
+    const user = await prisma.user.update({
+      where: {
+        id: req.userId,
+      },
+      data: req.body,
+    });
+    res.status(200).json(user);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to update user details." });
+  }
+};
+
+
+export {
+  fetchSellerCars,
+  fetchBuyerDetails,
+  updateUserDetails,
+};

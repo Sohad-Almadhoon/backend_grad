@@ -40,6 +40,7 @@ model Car {
   carType      String
   price        Float
   quantity     Int
+  quantitySold Int      @default(0)
   notes        String?
   sellerId     Int
   seller       User         @relation(fields: [sellerId], references: [id])
@@ -72,7 +73,7 @@ model Order {
 
 model Review {
   id        Int      @id @default(autoincrement())
-  star      Star
+  star      Int
   desc      String
   carId     Int
   car       Car      @relation(fields: [carId], references: [id])
@@ -83,13 +84,7 @@ model Review {
   @@unique([carId, buyerId])
 }
 
-enum Star {
-  One
-  Two
-  Three
-  Four
-  Five
-}
+
 
 model Cart {
   id         Int      @id @default(autoincrement())
