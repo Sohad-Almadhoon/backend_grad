@@ -5,7 +5,7 @@ const getCars = async (req, res) => {
   try {
     const cars = await prisma.car.findMany({
       where: {
-        ...(country && { model: { contains: country, mode: "insensitive" } }),
+        ...(country && { country: { contains: country, mode: "insensitive" } }),
         ...(color && { color: { equals: color, mode: "insensitive" } }),
         ...(brand && {
           brand: { equals: brand, mode: "insensitive" },
@@ -76,51 +76,6 @@ const deleteCar = async (req, res) => {
   }
 };
 
-const addReview = async (req, res) => {
-  const { id: carId } = req.params;
-
-  try {
-    const existingReview = await prisma.review.findFirst({
-      where: {
-        buyerId: req.userId,
-        carId,
-      },
-    });
-    if (existingReview)
-      return res
-        .status(400)
-        .json({ message: "You have already reviewed this car!." });
-
-    console.log({ carId: parseInt(carId), ...req.body, buyerId: req.userId });
-    const review = await prisma.review.create({
-      data: { carId: parseInt(carId), ...req.body, buyerId: req.userId },
-    });
-    res.status(201).json(review);
-  } catch (error) {
-    res.status(500).json({ error: "Failed to add review." });
-  }
-};
-
-const getCarReviews = async (req, res) => {
-  const { id } = req.params;
-  try {
-    const reviews = await prisma.review.findMany({
-      where: {
-        carId: parseInt(id),
-      },
-      include: {
-        buyer: {
-          select: {
-            username: true,
-          },
-        },
-      },
-    });
-    res.status(200).json(reviews);
-  } catch (error) {
-    res.status(500).json({ error: "Failed to fetch reviews." });
-  }
-};
 const updateCar = async (req, res) => {
   const { id } = req.params;
   const { isSeller } = req.user;
@@ -147,7 +102,6 @@ const getCarsStatistics = async (req, res) => {
       },
     });
 
-   
     const totalCars = cars.length;
     const totalQuantity = cars.reduce((sum, car) => sum + car.quantity, 0);
     const totalSoldQuantity = cars.reduce(
@@ -168,7 +122,6 @@ const getCarsStatistics = async (req, res) => {
         ...car,
         soldQuantity: car.quantitySold,
       }));
-
 
     const soldRatio =
       totalSoldQuantity / (totalQuantity + totalSoldQuantity) || 0;
@@ -192,17 +145,17 @@ const fetchSellerDetails = async (req, res) => {
   try {
     const cars = await prisma.car.findMany({
       where: {
-        sellerId: req.userId, 
+        sellerId: req.userId,
       },
       include: {
-        reviews: true, 
-        seller:{
+        reviews: true,
+        seller: {
           select: {
             username: true,
             email: true,
-            whatsapp:true
-          }
-        }
+            whatsapp: true,
+          },
+        },
       },
     });
 
@@ -225,17 +178,16 @@ const fetchSellerDetails = async (req, res) => {
     res.status(200).json({
       length: cars.length,
       seller: {
-        username: cars[0].seller.username, 
+        username: cars[0].seller.username,
         email: cars[0].seller.email,
         whatsapp: cars[0].seller.whatsapp,
-        averageStars: parseFloat(averageStars.toFixed(2)), 
+        averageStars: parseFloat(averageStars.toFixed(2)),
       },
     });
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch seller details." });
   }
 };
-
 
 export {
   getCars,

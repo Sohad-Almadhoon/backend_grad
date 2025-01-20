@@ -5,6 +5,12 @@ const fetchSellerCars = async (req, res) => {
     const cars = await prisma.car.findMany({
       where: {
         sellerId: req.userId,
+      },
+      select: {
+        brand: true,
+        coverImage: true,
+        country: true,
+        price: true,
       }
     });
     res.status(200).json({
@@ -16,17 +22,12 @@ const fetchSellerCars = async (req, res) => {
   }
 };
 
-
-
-const fetchBuyerDetails = async (req, res) => {
+const fetchUserDetails = async (req, res) => {
   try {
     const user = await prisma.user.findUnique({
       where: {
         id: req.userId,
-      },
-      include: {
-        cars:true,
-      },
+      }
     });
     if (!user) {
       return res.status(404).json({ error: "User not found." });
@@ -53,6 +54,6 @@ const updateUserDetails = async (req, res) => {
 
 export {
   fetchSellerCars,
-  fetchBuyerDetails,
+  fetchUserDetails,
   updateUserDetails,
 };
