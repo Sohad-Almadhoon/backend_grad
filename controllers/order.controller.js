@@ -1,18 +1,23 @@
 import prisma from "../utils/db.js";
 
 const createOrder = async (req, res) => {
-  const { carId, quantity } = req.body;
+  const { cartItemId, quantity , paymentIntent} = req.body;
 
   try {
-    const car = await prisma.car.findUnique({
-      where: { id: carId },
+    const cartItem = await prisma.cart.findUnique({
+      where: { id: cartItemId },
+      include: {
+        car: true,
+      },
     });
 
-    if (!car) {
-      return res.status(404).json({ error: "Car not found." });
+    if (!cartItem) {
+      return res.status(404).json({ error: "Cart item not found." });
     }
 
-    if (car.quantity < quantity) {
+    const { car, quantity: availableQuantity } = cartItem;
+
+    if (availableQuantity < quantity) {
       return res
         .status(400)
         .json({ error: "Insufficient car quantity available." });
@@ -21,17 +26,20 @@ const createOrder = async (req, res) => {
     const order = await prisma.$transaction(async (tx) => {
       const newOrder = await tx.order.create({
         data: {
-          carId,
+          carId: car.id,
           buyerId: req.userId,
           quantity,
           totalPrice: car.price * quantity,
+          cartItem: { connect: { id: cartItemId } },
+          paymentIntent,
         },
       });
 
+      // Update the quantity of the car in stock after creating the order
       await tx.car.update({
-        where: { id: carId },
+        where: { id: car.id },
         data: {
-          quantity: car.quantity - quantity,
+          quantity: availableQuantity - quantity,
           quantitySold: car.quantitySold + quantity,
         },
       });

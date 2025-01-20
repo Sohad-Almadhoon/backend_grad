@@ -1,9 +1,9 @@
 const addFavorite = async (req, res) => {
-  const { id: carId } = req.params;
+  const { carId } = req.body;
   try {
     const favorite = await prisma.favorite.create({
       data: {
-        carId: parseInt(carId),
+        carId,
         buyerId: req.userId,
       },
     });

@@ -83,9 +83,6 @@ model Review {
 
   @@unique([carId, buyerId])
 }
-
-
-
 model Cart {
   id         Int      @id @default(autoincrement())
   car        Car      @relation(fields: [carId], references: [id])
@@ -98,6 +95,7 @@ model Cart {
   updatedAt  DateTime @updatedAt
   Order      Order?   @relation
   orderId    Int?
+  @@unique([carId, buyerId])
 }
 
 model Favorite {

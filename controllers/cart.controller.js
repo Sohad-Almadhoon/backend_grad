@@ -8,19 +8,41 @@ const getCartItems = async (req, res) => {
         car: true,
       },
     });
-    res.status(200).json(cartItems);
+    res.status(200).json({
+      length: cartItems.length,
+      cartItems
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
 
 const addItemToCart = async (req, res) => {
+  const { carId, quantity } = req.body;
   try {
-    const buyerId = req.userId;
+    const car = await prisma.car.findUnique({ where: { id:carId } });
+
+    if (!car) {
+      return res.status(404).json({ error: "Car not found." });
+    }
+    const existingCartItem = await prisma.cart.findFirst({
+      where: {
+        carId,
+        buyerId: req.userId,
+      },
+    });
+
+    if (existingCartItem) {
+      return res
+        .status(400)
+        .json({ error: "This item is already in the cart." });
+    }
     const cartItem = await prisma.cart.create({
       data: {
-        buyerId,
-        ...req.body,
+        buyerId: req.userId,
+        carId,
+        quantity,
+        totalPrice: car.price * quantity, 
       },
     });
     res.status(201).json(cartItem);
@@ -73,7 +95,7 @@ const removeItemFromCart = async (req, res) => {
     await prisma.cart.delete({
       where: { id: parseInt(id) },
     });
-    res.status(204).json({ message: "Item removed from cart" });
+    res.status(204).json();
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

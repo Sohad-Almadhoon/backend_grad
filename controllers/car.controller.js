@@ -68,7 +68,11 @@ const deleteCar = async (req, res) => {
     if (!car) {
       return res.status(404).json({ error: "Car not found." });
     }
-
+    if (car.sellerId !== req.userId) {
+      return res
+        .status(403)
+        .json({ error: "You are not allowed to delete this car." });
+    }
     await prisma.car.delete({ where: { id: parseInt(id) } });
     res.status(200).json({ message: "Car deleted successfully." });
   } catch (error) {
@@ -78,16 +82,21 @@ const deleteCar = async (req, res) => {
 
 const updateCar = async (req, res) => {
   const { id } = req.params;
-  const { isSeller } = req.user;
-  if (!isSeller)
-    res.status(403).json({ error: "You are not allowed to create a car!" });
   try {
+    if (!req.isSeller)
+      res.status(403).json({ error: "You are not allowed to update a car!" });
+    const car = await prisma.car.findUnique({ where: { id: parseInt(id) } });
+    if (car.sellerId !== req.userId) {
+      return res
+        .status(403)
+        .json({ error: "You are not allowed to update this car." });
+    }
     const updatedCar = await prisma.car.update({
       where: { id: parseInt(id) },
       data: req.body,
     });
 
-    res.json({ message: "Car updated successfully", updatedCar });
+    res.json(updatedCar);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Failed to update car" });
@@ -101,7 +110,7 @@ const getCarsStatistics = async (req, res) => {
         sellerId: req.userId,
       },
     });
-
+   
     const totalCars = cars.length;
     const totalQuantity = cars.reduce((sum, car) => sum + car.quantity, 0);
     const totalSoldQuantity = cars.reduce(
@@ -195,8 +204,6 @@ export {
   getCarById,
   createCar,
   deleteCar,
-  addReview,
-  getCarReviews,
   updateCar,
   fetchSellerDetails,
 };

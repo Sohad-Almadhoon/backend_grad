@@ -1,12 +1,25 @@
 const addReview = async (req, res) => {
-  const { id } = req.params;
-  const { star, desc } = req.body;
-  console.log(star, desc, id, req.userId);
+  const { id: orderId } = req.params;
+  const { star, desc } = req.body; 
+
   try {
+     const order = await prisma.order.findUnique({
+       where: {
+         id: parseInt(orderId), 
+       },
+       include: {
+         car: {
+           select: {
+             id: true,
+           }
+         }, 
+       },
+     });
+    
     const existingReview = await prisma.review.findFirst({
       where: {
         buyerId: req.userId,
-        carId,
+        carId : order.car.id,
       },
     });
     if (existingReview)
@@ -16,7 +29,7 @@ const addReview = async (req, res) => {
 
     const review = await prisma.review.create({
       data: {
-        carId: parseInt(id),
+        carId: order.car.id,
         star,
         desc,
         buyerId: req.userId,

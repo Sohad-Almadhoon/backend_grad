@@ -7,7 +7,7 @@ import {
 import verifyToken from "../middlewares/verifyToken.js";
 
 const router = express.Router();
-router.get("/favorites", verifyToken, getFavorites);
-router.post("/:id/favorites", verifyToken, addFavorite);
-router.delete("/favorites/:id", verifyToken, removeFavorite);
+router.get("/", verifyToken, getFavorites);
+router.post("/", verifyToken, addFavorite);
+router.delete("/:id", verifyToken, removeFavorite);
 export default router;
