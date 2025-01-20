@@ -39,8 +39,8 @@ model Car {
   country      String
   carType      String
   price        Float
-  quantity     Int
-  quantitySold Int      @default(0)
+  quantityInStock     Int
+  quantitySold Int          @default(0)
   notes        String?
   sellerId     Int
   seller       User         @relation(fields: [sellerId], references: [id])
@@ -49,7 +49,7 @@ model Car {
   cartItems    Cart[]
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
-  favorites     Favorite[]
+  favorites    Favorite[]
 }
 
 enum Transmission {
@@ -60,15 +60,16 @@ enum Transmission {
 model Order {
   id            Int      @id @default(autoincrement())
   paymentIntent String
-  totalPrice    Decimal
+  totalPrice    Decimal      
   buyer         User     @relation(fields: [buyerId], references: [id])
   buyerId       Int
   createdAt     DateTime @default(now())
-  cartItemId    Int
-  cartItem      Cart @relation(fields: [cartItemId], references: [id])
-  Car           Car     @relation(fields: [carId], references: [id])
-  carId         Int 
-  @@unique([cartItemId])
+  cartItemId    Int      @unique
+  cartItem      Cart     @relation(fields: [cartItemId], references: [id])
+  car           Car      @relation(fields: [carId], references: [id])
+  carId         Int
+
+  @@unique([buyerId, cartItemId, carId])
 }
 
 model Review {
@@ -78,11 +79,12 @@ model Review {
   carId     Int
   car       Car      @relation(fields: [carId], references: [id])
   buyerId   Int
-  buyer      User     @relation(fields: [buyerId], references: [id])
+  buyer     User     @relation(fields: [buyerId], references: [id])
   createdAt DateTime @default(now())
 
   @@unique([carId, buyerId])
 }
+
 model Cart {
   id         Int      @id @default(autoincrement())
   car        Car      @relation(fields: [carId], references: [id])
@@ -93,8 +95,9 @@ model Cart {
   totalPrice Float
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
-  Order      Order?   @relation
+  order      Order?   @relation
   orderId    Int?
+
   @@unique([carId, buyerId])
 }
 
