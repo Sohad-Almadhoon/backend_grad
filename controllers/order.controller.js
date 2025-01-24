@@ -1,8 +1,9 @@
 import prisma from "../utils/db.js";
 
 const createOrder = async (req, res) => {
-  const { carId, paymentIntent, totalPrice, cartItemId } = req.body;
+  const { carId, paymentIntent, totalPrice, cartItemId, quantity } = req.body;
   try {
+    console.log(req.body);
     const order = await prisma.order.create({
       data: {
         paymentIntent,
@@ -10,8 +11,17 @@ const createOrder = async (req, res) => {
         buyerId: req.userId,
         cartItemId,
         carId,
+        // quantity,
+      },
+      include: {
+        car: {
+          select: {
+            id: true,
+          },
+        },
       },
     });
+
     const car = await prisma.car.findUnique({
       where: { id: carId },
     });
@@ -19,14 +29,21 @@ const createOrder = async (req, res) => {
     if (!car) {
       return res.status(404).json({ error: "Car not found!" });
     }
+    if (car.quantity < quantity) {
+      return res.status(400).json({ error: "Not enough stock available!" });
+    }
+
     await prisma.car.update({
       where: { id: carId },
       data: {
-        quantitySold: car.quantitySold + 1,
-        quantityInStock: car.quantityInStock - 1,
+        quantitySold: car.quantitySold + quantity,
+        quantityInStock: car.quantity - quantity,
       },
     });
-
+    await prisma.cart.delete({
+      where: { id: cartItemId },
+    });
+    console.log(order);
     return res.status(201).json(order);
   } catch (error) {
     return res.status(500).json({ error: error.message });

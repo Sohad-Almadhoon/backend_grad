@@ -14,6 +14,7 @@ model User {
   password  String
   whatsapp  String
   isSeller  Boolean
+  resetPasswordToken   String?
   cars      Car[]
   orders    Order[]
   cartItems Cart[]
@@ -41,7 +42,6 @@ model Car {
   price        Float
   quantityInStock     Int
   quantitySold Int          @default(0)
-  notes        String?
   sellerId     Int
   seller       User         @relation(fields: [sellerId], references: [id])
   reviews      Review[]
@@ -60,7 +60,8 @@ enum Transmission {
 model Order {
   id            Int      @id @default(autoincrement())
   paymentIntent String
-  totalPrice    Decimal      
+  totalPrice    Decimal  
+  quantity      Int    
   buyer         User     @relation(fields: [buyerId], references: [id])
   buyerId       Int
   createdAt     DateTime @default(now())
@@ -97,7 +98,6 @@ model Cart {
   updatedAt  DateTime @updatedAt
   order      Order?   @relation
   orderId    Int?
-
   @@unique([carId, buyerId])
 }
 

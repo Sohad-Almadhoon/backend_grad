@@ -28,6 +28,26 @@ const getCarById = async (req, res) => {
   try {
     const car = await prisma.car.findUnique({
       where: { id: parseInt(id) },
+      include: {
+        seller: {
+          select: {
+            username: true,
+            email: true,
+            whatsapp: true,
+          },
+        },
+        reviews: {
+          select: {
+            star: true,
+            desc: true,
+            buyer: {
+              select: {
+                username: true,
+              },
+            },
+          },
+        },
+      },
     });
     if (!car) {
       return res.status(404).json({ error: "Car not found." });
@@ -110,14 +130,17 @@ const getCarsStatistics = async (req, res) => {
         sellerId: req.userId,
       },
     });
-   
+
     const totalCars = cars.length;
     const totalQuantity = cars.reduce((sum, car) => sum + car.quantity, 0);
     const totalSoldQuantity = cars.reduce(
       (sum, car) => sum + car.quantitySold,
       0
     );
-
+    const revenue = cars.reduce(
+      (sum, car) => sum + car.price * car.quantitySold,
+      0
+    );
     const remainingCars = cars
       .filter((car) => car.quantity > 0)
       .map((car) => ({
@@ -139,6 +162,7 @@ const getCarsStatistics = async (req, res) => {
 
     res.status(200).json({
       totalCars,
+      revenue,
       totalQuantity,
       totalSoldQuantity,
       soldRatio,
