@@ -33,6 +33,7 @@ router.post("/create-payment-intent", verifyToken, async (req, res) => {
           quantity,
         },
       ],
+      success_url: `${process.env.CLIENT_URL}/success`,
       mode: "payment",
       customer_email: user.email,
     });
