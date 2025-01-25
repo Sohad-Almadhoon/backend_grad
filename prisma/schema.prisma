@@ -8,48 +8,48 @@ datasource db {
 }
 
 model User {
-  id        Int        @id @default(autoincrement())
-  username  String     @unique
-  email     String     @unique
-  password  String
-  whatsapp  String
-  isSeller  Boolean
-  resetPasswordToken   String?
-  cars      Car[]
-  orders    Order[]
-  cartItems Cart[]
-  reviews   Review[]
-  createdAt DateTime   @default(now())
-  favorites Favorite[]
+  id                 Int        @id @default(autoincrement())
+  username           String     @unique
+  email              String     @unique
+  password           String
+  whatsapp           String
+  isSeller           Boolean
+  resetPasswordToken String?
+  cars               Car[]
+  orders             Order[]
+  cartItems          Cart[]
+  reviews            Review[]
+  createdAt          DateTime   @default(now())
+  favorites          Favorite[]
 }
 
 model Car {
-  id           Int          @id @default(autoincrement())
-  brand        String
-  year         Int
-  color        String
-  coverImage   String
-  images       String[]
-  fuelType     String
-  transmission Transmission
-  battery      Int
-  speed        Float
-  seats        Int
-  climate      Int
-  range        Decimal
-  country      String
-  carType      String
-  price        Float
-  quantityInStock     Int
-  quantitySold Int          @default(0)
-  sellerId     Int
-  seller       User         @relation(fields: [sellerId], references: [id])
-  reviews      Review[]
-  orders       Order[]
-  cartItems    Cart[]
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
-  favorites    Favorite[]
+  id              Int          @id @default(autoincrement())
+  brand           String
+  year            Int
+  color           String
+  coverImage      String
+  images          String[]
+  fuelType        String
+  transmission    Transmission
+  battery         Int
+  speed           Float
+  seats           Int
+  climate         Int
+  range           Decimal
+  country         String
+  carType         String
+  price           Float
+  quantityInStock Int
+  quantitySold    Int          @default(0)
+  sellerId        Int
+  seller          User         @relation(fields: [sellerId], references: [id])
+  reviews         Review[]
+  orders          Order[]
+  cartItems       Cart[]
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  favorites       Favorite[]
 }
 
 enum Transmission {
@@ -60,8 +60,8 @@ enum Transmission {
 model Order {
   id            Int      @id @default(autoincrement())
   paymentIntent String
-  totalPrice    Decimal  
-  quantity      Int    
+  totalPrice    Decimal
+  quantity      Int
   buyer         User     @relation(fields: [buyerId], references: [id])
   buyerId       Int
   createdAt     DateTime @default(now())
@@ -98,6 +98,7 @@ model Cart {
   updatedAt  DateTime @updatedAt
   order      Order?   @relation
   orderId    Int?
+
   @@unique([carId, buyerId])
 }
 
