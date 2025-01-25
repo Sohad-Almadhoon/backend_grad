@@ -2,6 +2,7 @@ import bcrypt from "bcrypt";
 import prisma from "../utils/db.js";
 import jwt from "jsonwebtoken";
 import sendEmail from "../utils/sendEmail.js";
+import crypto from "crypto";
 const register = async (req, res) => {
   const { email, password, username, whatsapp, isSeller } = req.body;
 
@@ -72,7 +73,7 @@ const forgetPassword = async (req, res) => {
   try {
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) return res.status(404).json({ message: "User not found" });
-
+    const otp = crypto.randomInt(100000, 999999).toString();
     const hashedOtp = await bcrypt.hash(otp, 10);
     const expiry = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes from now
     await prisma.user.update({
