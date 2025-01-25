@@ -3,7 +3,7 @@ import prisma from "../utils/db.js";
 import jwt from "jsonwebtoken";
 import sendEmail from "../utils/sendEmail.js";
 const register = async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, username, whatsapp, isSeller } = req.body;
 
   try {
     const existingUser = await prisma.user.findUnique({
@@ -19,7 +19,9 @@ const register = async (req, res) => {
 
     const user = await prisma.user.create({
       data: {
-        ...req.body,
+        username,
+        whatsapp,
+        isSeller,
         email,
         password: hashedPassword,
       },
@@ -30,7 +32,7 @@ const register = async (req, res) => {
     res.status(201).json(userWithoutPassword);
   } catch (error) {
     console.error(error);
-    res.status(500).json(error.message);
+    res.status(500).json(req.body);
   }
 };
 const login = async (req, res) => {
