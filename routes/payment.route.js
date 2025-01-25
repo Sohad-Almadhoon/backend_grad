@@ -1,38 +1,47 @@
 import express from "express";
+import verifyToken from "../middlewares/verifyToken.js";
 import prisma from "../utils/db.js";
+import stripe from "../utils/stripe.js";
 const router = express.Router();
-import Stripe from "stripe";
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2024-11-20.acacia",
-});
 
-router.get("/success", async (req, res) => {
-  const { session_id } = req.query;
-
+router.post("/create-payment-intent", verifyToken, async (req, res) => {
+  const id = req.userId;
+  const { quantity, amount, currency } = req.body;
+  if (!id) {
+    return res.status(400).json({ error: "User ID is required." });
+  }
   try {
-    const session = await stripe.checkout.sessions.retrieve(session_id);
-    if (session.payment_status === "paid") {
-      const user = await prisma.user.findUnique({
-        where: { email: session.customer_email },
-      });
-
-      if (user) {
-        await prisma.user.update({
-          where: { id: user.id },
-          data: { has_paid: true},
-        });
-      } else {
-        console.log("User not found");
-      }
-
-      res.status(200).json({});
-      
-    } else {
-      res.status(400).send("Payment failed or incomplete.");
+    const user = await prisma.user.findUnique({
+      where: { id },
+    });
+    if (!user) {
+      return res.status(404).json({ error: "User not found." });
     }
+
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ["card"],
+      line_items: [
+        {
+          price_data: {
+            currency,
+            product_data: {
+              name: "Car Subscription",
+            },
+            unit_amount: amount,
+          
+          },
+          quantity,
+        },
+      ],
+      mode: "payment",
+      customer_email: user.email,
+    });
+
+    res.status(200).json({ id: session.id });
   } catch (error) {
     console.error(error);
-    res.status(500).send("Error processing payment.");
+    res.status(500).json({ error: error.message });
   }
 });
+
 export default router;

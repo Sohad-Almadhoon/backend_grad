@@ -82,5 +82,26 @@ const getAllOrders = async (req, res) => {
     return res.status(500).json({ error: error.message });
   }
 };
+const confirmOrder = async (req, res) => {
+  const { paymentIntentId } = req.body;
 
-export { createOrder, getAllOrders };
+  try {
+    // Step 1: Retrieve the payment intent from Stripe to verify payment status
+    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+
+    // Step 2: Check the payment status
+    if (paymentIntent.status === 'succeeded') {
+      // Payment was successful, confirm the order
+      // You can perform any actions like updating the order status in your database here
+      console.log('Payment confirmed for Order:', paymentIntent.id);
+      res.status(200).send({ message: 'Order confirmed' });
+    } else {
+      // Payment was not successful
+      res.status(400).send({ error: 'Payment failed' });
+    }
+  } catch (error) {
+    console.error('Error confirming payment:', error);
+    res.status(500).send({ error: 'Internal server error' });
+  }
+}
+export { createOrder, getAllOrders , confirmOrder };

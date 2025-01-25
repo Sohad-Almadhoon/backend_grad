@@ -9,18 +9,15 @@ import cartRoutes from "./routes/cart.route.js";
 import userRoutes from "./routes/user.route.js";
 import reviewRoutes from "./routes/review.route.js";
 import favoriteRoutes from "./routes/favorite.route.js";
+import paymentRoute from "./routes/payment.route.js";
 import errorHandler from "./middlewares/errorMiddleware.js";
+
 import cors from "cors";
 const app = express();
 dotenv.config();
 app.use(express.json());
 app.use(bodyParser.json());
 
-app.use(
-  cors({
-    origin: "http://localhost:3000",
-  })
-);
 const routes = {
   "/api/warmup": (_, res) => {
     res.send("Server is running");
@@ -33,6 +30,7 @@ const routes = {
   "/api/users": userRoutes,
   "/api/reviews": reviewRoutes,
   "/api/favorites": favoriteRoutes,
+  "/api/payment": paymentRoute,
 };
 Object.keys(routes).forEach((route) => app.use(route, routes[route]));
 
