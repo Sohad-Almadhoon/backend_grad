@@ -15,6 +15,7 @@ model User {
   whatsapp           String
   isSeller           Boolean
   resetPasswordToken String?
+  resetPasswordExpiry DateTime?
   cars               Car[]
   orders             Order[]
   cartItems          Cart[]

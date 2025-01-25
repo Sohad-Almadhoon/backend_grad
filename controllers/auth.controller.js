@@ -71,36 +71,39 @@ const forgetPassword = async (req, res) => {
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    const resetToken = jwt.sign({ id: user.id }, process.env.JWT_SECRET);
-
+    const hashedOtp = await bcrypt.hash(otp, 10);
+    const expiry = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes from now
     await prisma.user.update({
       where: { email },
-      data: { resetPasswordToken: resetToken },
+      data: { resetPasswordToken: hashedOtp, resetPasswordExpiry: expiry },
     });
-    const resetLink = `${process.env.CLIENT_URL}/reset-password?token=${resetToken}`;
     await sendEmail(
       email,
-      "Password Reset",
-      `Click the link to reset your password: ${resetLink}`
+      "Password Reset OTP",
+      `Your OTP for resetting your password is: ${otp}. It will expire in 15 minutes.`
     );
 
-    res.status(200).json({ message: "Reset link sent to your email" });
+    res.status(200).json({ message: "OTP sent to your email" });
   } catch (error) {
     res.status(500).json({ message: "Server error", error });
   }
 };
 
 const resetPassword = async (req, res) => {
-  const { newPassword, token } = req.body;
-  console.log(newPassword, token);
+  const { newPassword, otp, email } = req.body;
 
   try {
-    const user = await prisma.user.findFirst({
-      where: { resetPasswordToken: token },
-    });
-    if (!user)
-      return res.status(400).json({ message: "Invalid or already used token" });
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) return res.status(404).json({ message: "Invalid email or OTP" }); // Check if OTP has expired
 
+    if (new Date() > user.resetPasswordExpiry) {
+      return res.status(400).json({ message: "OTP has expired" });
+    }
+    // Verify the OTP
+    const isOtpValid = await bcrypt.compare(otp, user.resetPasswordToken);
+    if (!isOtpValid) {
+      return res.status(400).json({ message: "Invalid OTP" });
+    }
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
     await prisma.user.update({
@@ -108,6 +111,7 @@ const resetPassword = async (req, res) => {
       data: {
         password: hashedPassword,
         resetPasswordToken: null,
+        resetPasswordExpiry: null,
       },
     });
 
