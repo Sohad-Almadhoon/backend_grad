@@ -30,7 +30,7 @@ const register = async (req, res) => {
     res.status(201).json(userWithoutPassword);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Error creating user. Please try again." + error.message});
+    res.status(500).json(error);
   }
 };
 const login = async (req, res) => {
