@@ -30,7 +30,7 @@ const register = async (req, res) => {
     res.status(201).json(userWithoutPassword);
   } catch (error) {
     console.error(error);
-    res.status(500).json(error);
+    res.status(500).json(error.message);
   }
 };
 const login = async (req, res) => {
