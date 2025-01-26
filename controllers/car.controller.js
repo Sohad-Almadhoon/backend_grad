@@ -78,11 +78,10 @@ const createCar = async (req, res) => {
 
 const deleteCar = async (req, res) => {
   const { id } = req.params;
-  const { isSeller } = req.user;
-  if (!isSeller)
+  if (!req.isSeller)
     return res
       .status(403)
-      .json({ error: "You are not allowed to create a car!" });
+      .json({ error: "You are not allowed to delete a car!" });
   try {
     const car = await prisma.car.findUnique({ where: { id: parseInt(id) } });
     if (!car) {
