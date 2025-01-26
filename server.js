@@ -18,11 +18,11 @@ app.use(bodyParser.json());
 const routes = {
   "/api/auth": authRoutes,
   "/api/cars": carRoutes,
-  "/api/orders": orderRoutes,
-  "/api/carts": cartRoutes,
-  "/api/users": userRoutes,
-  "/api/reviews": reviewRoutes,
   "/api/favorites": favoriteRoutes,
+  "/api/reviews": reviewRoutes,
+  "/api/carts": cartRoutes,
+  "/api/orders": orderRoutes,
+  "/api/users": userRoutes,
 };
 Object.keys(routes).forEach((route) => app.use(route, routes[route]));
 
