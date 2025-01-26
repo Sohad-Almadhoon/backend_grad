@@ -1,3 +1,5 @@
+import prisma from "../utils/db.js";
+
 const addFavorite = async (req, res) => {
   const { carId } = req.body;
   try {
