@@ -58,7 +58,7 @@ model Order {
   carId         Int
   createdAt     DateTime @default(now())
   buyerId       Int
-  paymentIntent String
+  paymentIntent String?
   cartItemId    Int      @unique
   totalPrice    Decimal
   quantity      Int

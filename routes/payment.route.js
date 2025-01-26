@@ -17,29 +17,13 @@ router.post("/create-payment-intent", verifyToken, async (req, res) => {
     if (!user) {
       return res.status(404).json({ error: "User not found." });
     }
-
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ["card"],
-      line_items: [
-        {
-          price_data: {
-            currency,
-            product_data: {
-              name: "Car Subscription",
-            },
-            unit_amount: amount,
-          
-          },
-          quantity,
-        },
-      ],
-      success_url: `${process.env.CLIENT_URL}/success`,
-      mode: "payment",
-      customer_email: user.email,
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: amount * quantity,
+      currency,
     });
-
-    res.status(200).json({ id: session.id });
-  } catch (error) {
+    res.status(200).json(paymentIntent);
+  }
+  catch (error) {
     console.error(error);
     res.status(500).json({ error: error.message });
   }
