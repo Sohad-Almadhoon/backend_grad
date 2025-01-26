@@ -3,7 +3,6 @@ import dotenv from "dotenv";
 import bodyParser from "body-parser";
 import authRoutes from "./routes/auth.route.js";
 import carRoutes from "./routes/car.route.js";
-import uploadRoutes from "./routes/upload.route.js";
 import orderRoutes from "./routes/order.route.js";
 import cartRoutes from "./routes/cart.route.js";
 import userRoutes from "./routes/user.route.js";
@@ -24,7 +23,6 @@ const routes = {
   },
   "/api/auth": authRoutes,
   "/api/cars": carRoutes,
-  "/api/upload": uploadRoutes,
   "/api/orders": orderRoutes,
   "/api/carts": cartRoutes,
   "/api/users": userRoutes,
