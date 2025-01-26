@@ -30,7 +30,6 @@ model Car {
   price           Float
   coverImage      String
   createdAt       DateTime     @default(now())
-  fuelType        String
   images          String[]
   sellerId        Int
   transmission    Transmission
@@ -39,11 +38,10 @@ model Car {
   battery         Int
   brand           String
   carType         String
-  climate         Int
+  climate         Boolean
   country         String
   range           Decimal
   seats           Int
-  speed           Float
   quantitySold    Int          @default(0)
   quantityInStock Int
   seller          User         @relation(fields: [sellerId], references: [id])

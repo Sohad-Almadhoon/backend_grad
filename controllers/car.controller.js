@@ -72,7 +72,7 @@ const createCar = async (req, res) => {
     });
     res.status(201).json(car);
   } catch (error) {
-    res.status(500).json({ error: "Failed to add car.", error });
+    res.status(500).json({ error: "Failed to add car.", error: error.message });
   }
 };
 
