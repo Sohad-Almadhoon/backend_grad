@@ -33,7 +33,7 @@ const register = async (req, res) => {
     res.status(201).json(userWithoutPassword);
   } catch (error) {
     console.error(error);
-    res.status(500).json(req.body);
+    res.status(500).json({error:error.message});
   }
 };
 const login = async (req, res) => {
@@ -63,7 +63,7 @@ const login = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Error logging in" });
+    res.status(500).json({ error: "Error logging in", error: error.message });
   }
 };
 
@@ -76,7 +76,6 @@ const forgetPassword = async (req, res) => {
     const otp = crypto.randomInt(100000, 999999).toString();
     const hashedOtp = await bcrypt.hash(otp, 10);
     const expiry = new Date(Date.now() + 60 * 1000); // expires in 60 seconds
-    // 15 minutes from now
     await prisma.user.update({
       where: { email },
       data: { resetPasswordToken: hashedOtp, resetPasswordExpiry: expiry },

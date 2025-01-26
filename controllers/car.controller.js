@@ -19,7 +19,7 @@ const getCars = async (req, res) => {
       cars,
     });
   } catch (error) {
-    res.status(500).json({ error: "Failed to fetch cars." });
+    res.status(500).json({ error: "Failed to fetch cars."  , error:error.message});
   }
 };
 
@@ -50,7 +50,9 @@ const getCarById = async (req, res) => {
       },
     });
     if (!car) {
-      return res.status(404).json({ error: "Car not found." });
+      return res
+        .status(404)
+        .json({ error: "Car not found.", error: error.message });
     }
     res.status(200).json(car);
   } catch (error) {
@@ -95,7 +97,9 @@ const deleteCar = async (req, res) => {
     await prisma.car.delete({ where: { id: parseInt(id) } });
     res.status(200).json({ message: "Car deleted successfully." });
   } catch (error) {
-    res.status(500).json({ error: "Failed to delete car." });
+    res
+      .status(500)
+      .json({ error: "Failed to delete car.", error: error.message });
   }
 };
 
@@ -118,7 +122,9 @@ const updateCar = async (req, res) => {
     res.json(updatedCar);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Failed to update car" });
+    res
+      .status(500)
+      .json({ error: "Failed to update car", error: error.message });
   }
 };
 
@@ -170,7 +176,9 @@ const getCarsStatistics = async (req, res) => {
       soldCars,
     });
   } catch (error) {
-    res.status(500).json({ error: "Failed to fetch car statistics." });
+    res
+      .status(500)
+      .json({ error: "Failed to fetch car statistics.", error: error.message });
   }
 };
 const fetchSellerDetails = async (req, res) => {
@@ -217,7 +225,9 @@ const fetchSellerDetails = async (req, res) => {
       },
     });
   } catch (error) {
-    res.status(500).json({ error: "Failed to fetch seller details." });
+    res
+      .status(500)
+      .json({ error: "Failed to fetch seller details.", error: error.message });
   }
 };
 

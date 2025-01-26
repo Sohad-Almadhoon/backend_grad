@@ -1,16 +1,16 @@
 const addFavorite = async (req, res) => {
   const { carId } = req.body;
   try {
-    const favorite = await prisma.favorite.create({
+    await prisma.favorite.create({
       data: {
         carId,
         buyerId: req.userId,
       },
     });
 
-    res.status(201).json(favorite);
+    res.status(201).json("Add to favorites successfully!");
   } catch (error) {
-    res.status(500).json({ error: "Failed to add to favorites.", error });
+    res.status(500).json({ error: "Failed to add to favorites.", error : error.message });
   }
 };
 const getFavorites = async (req, res) => {
@@ -33,7 +33,7 @@ const getFavorites = async (req, res) => {
       favorites,
     });
   } catch (error) {
-    res.status(500).json({ error: "Failed to fetch favorites." });
+    res.status(500).json({ error: "Failed to fetch favorites." , error: error.message });
   }
 };
 
@@ -45,7 +45,7 @@ const removeFavorite = async (req, res) => {
     });
     res.status(204).json({ message: "Favorite removed." });
   } catch (error) {
-    res.status(500).json({ error: "Failed to remove from favorites." });
+    res.status(500).json({ error: "Failed to remove from favorites."  , error:error.message});
   }
 };
 export { addFavorite, getFavorites, removeFavorite };
