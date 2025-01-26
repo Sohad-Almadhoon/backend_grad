@@ -38,6 +38,8 @@ model Car {
   battery         Int
   brand           String
   carType         String
+  speed           Float
+  fuelType        String
   climate         Boolean
   country         String
   range           Decimal
@@ -56,7 +58,7 @@ model Order {
   carId         Int
   createdAt     DateTime @default(now())
   buyerId       Int
-  paymentIntent String?
+  paymentIntent String
   cartItemId    Int      @unique
   totalPrice    Decimal
   quantity      Int
