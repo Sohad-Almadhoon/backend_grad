@@ -6,5 +6,5 @@ const router = express.Router();
 
 router.post("/", verifyToken ,createOrder);
 router.get("/", verifyToken, getAllOrders);
-router.post("/confirm" , confirmOrder);
+router.post("/confirm", verifyToken, confirmOrder);
 export default router;

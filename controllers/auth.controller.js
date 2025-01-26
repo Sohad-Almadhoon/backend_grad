@@ -75,7 +75,8 @@ const forgetPassword = async (req, res) => {
     if (!user) return res.status(404).json({ message: "User not found" });
     const otp = crypto.randomInt(100000, 999999).toString();
     const hashedOtp = await bcrypt.hash(otp, 10);
-    const expiry = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes from now
+    const expiry = new Date(Date.now() + 60 * 1000); // expires in 60 seconds
+    // 15 minutes from now
     await prisma.user.update({
       where: { email },
       data: { resetPasswordToken: hashedOtp, resetPasswordExpiry: expiry },
@@ -83,7 +84,7 @@ const forgetPassword = async (req, res) => {
     await sendEmail(
       email,
       "Password Reset OTP",
-      `Your OTP for resetting your password is: ${otp}. It will expire in 15 minutes.`
+      `Your OTP for resetting your password is: ${otp}. It will expire in 1 minute.`
     );
 
     res.status(200).json({ message: "OTP sent to your email" });
