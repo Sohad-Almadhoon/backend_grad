@@ -4,16 +4,6 @@ import stripe from "../utils/stripe.js";
 const createPaymentIntent = async (req, res) => {
   const { totalPrice, currency } = req.body;
   try {
-    const car = await prisma.car.findUnique({
-      where: { id: carId },
-    });
-
-    if (!car) {
-      return res.status(404).json({ error: "Car not found!" });
-    }
-    if (car.quantityInStock < quantity) {
-      return res.status(400).json({ error: "Not enough stock available!" });
-    }
     const paymentIntent = await stripe.paymentIntents.create({
       amount: totalPrice * 100,
       currency,
