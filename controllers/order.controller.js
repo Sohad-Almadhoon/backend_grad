@@ -2,7 +2,7 @@ import prisma from "../utils/db.js";
 import stripe from "../utils/stripe.js";
 
 const createPaymentIntent = async (req, res) => {
-  const { carId, totalPrice, quantity } = req.body;
+  const { totalPrice  , currency} = req.body;
   try {
     const car = await prisma.car.findUnique({
       where: { id: carId },
@@ -16,8 +16,7 @@ const createPaymentIntent = async (req, res) => {
     }
     const paymentIntent = await stripe.paymentIntents.create({
       amount: totalPrice * 100,
-      currency: "usd",
-      metadata: { carId, quantity },
+      currency
     });
     return res.status(200).json({ clientSecret: paymentIntent.client_secret });
   } catch (error) {
