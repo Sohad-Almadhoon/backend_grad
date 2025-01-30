@@ -12,6 +12,7 @@ import errorHandler from "./middlewares/errorMiddleware.js";
 
 const app = express();
 dotenv.config();
+app.use(cors({ origin: '*' })); 
 app.use(express.json());
 app.use(bodyParser.json());
 
