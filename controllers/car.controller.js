@@ -129,6 +129,11 @@ const updateCar = async (req, res) => {
 };
 
 const getCarsStatistics = async (req, res) => {
+  if (!req.isSeller) {
+    return res
+      .status(403)
+      .json({ error: "You are not allowed to see these statistics!" });
+  }
   try {
     const cars = await prisma.car.findMany({
       where: {
