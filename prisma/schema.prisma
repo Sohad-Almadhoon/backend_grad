@@ -54,19 +54,17 @@ model Car {
 }
 
 model Order {
-  id            Int      @id @default(autoincrement())
-  carId         Int
-  createdAt     DateTime @default(now())
-  buyerId       Int
-  paymentIntent String
-  cartItemId    Int      @unique
-  totalPrice    Decimal
-  quantity      Int
-  buyer         User     @relation(fields: [buyerId], references: [id])
-  car           Car      @relation(fields: [carId], references: [id])
-  cartItem      Cart     @relation(fields: [cartItemId], references: [id])
+  id         Int      @id @default(autoincrement())
+  carId      Int
+  createdAt  DateTime @default(now())
+  buyerId    Int
+  totalPrice Decimal
+  quantity   Int
+  buyer      User     @relation(fields: [buyerId], references: [id])
+  car        Car      @relation(fields: [carId], references: [id])
+  Cart       Cart[]
 
-  @@unique([buyerId, cartItemId, carId])
+  @@unique([buyerId, carId])
 }
 
 model Review {
@@ -93,7 +91,7 @@ model Cart {
   updatedAt  DateTime @updatedAt
   buyer      User     @relation(fields: [buyerId], references: [id])
   car        Car      @relation(fields: [carId], references: [id])
-  order      Order?
+  order      Order?   @relation(fields: [orderId], references: [id])
 
   @@unique([carId, buyerId])
 }

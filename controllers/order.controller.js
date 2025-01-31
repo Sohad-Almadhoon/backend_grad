@@ -52,48 +52,43 @@ const getOrders = async (req, res, isSeller) => {
 };
 
 const confirmOrder = async (req, res) => {
-  const { carId, totalPrice, cartItemId, quantity } = req.body;
+  const { carId, cartItemId } = req.body;
 
   try {
-    const car = await prisma.car.findUnique({
-      where: { id: carId },
+    const cartItem = await prisma.cart.findUnique({
+      where: { id: cartItemId },
+      include: { car: true }, 
     });
 
-    if (!car) return res.status(404).json({ error: "Car not found!" });
+    if (!cartItem)
+      return res.status(404).json({ error: "Cart item not found!" });
 
+    const { totalPrice, quantity, car } = cartItem;
+
+    if (!car) return res.status(404).json({ error: "Car not found!" });
     if (car.quantityInStock < quantity) {
-      return res
-        .status(400)
-        .json({ error: `Not enough stock for ${car.brand}!` });
+      return res.status(400).json({ error: `Not enough stock available!` });
     }
 
-    const [order] = await prisma.$transaction([
-      prisma.order.create({
-        data: { totalPrice, buyerId: req.userId, cartItemId, carId, quantity },
-        include: {
-          car: {
-            select: {
-              brand: true,
-              coverImage: true,
-              price: true,
-            },
-          },
-        },
-      }),
-      prisma.car.update({
-        where: { id: carId },
-        data: {
-          quantitySold: car.quantitySold + quantity,
-          quantityInStock: car.quantityInStock - quantity,
-        },
-      }),
-      prisma.cart.delete({ where: { id: cartItemId } }),
-    ]);
+    const order = await prisma.order.create({
+      data: { totalPrice, buyerId: req.userId, carId, quantity },
+    });
+
+    await prisma.car.update({
+      where: { id: carId },
+      data: {
+        quantitySold: car.quantitySold + quantity,
+        quantityInStock: car.quantityInStock - quantity,
+      },
+    });
+
+    await prisma.cart.delete({ where: { id: cartItemId } });
 
     return res.status(201).json(order);
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
 };
+
 
 export { createPaymentIntent, getOrders, confirmOrder };
