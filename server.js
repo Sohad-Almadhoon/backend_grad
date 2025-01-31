@@ -9,6 +9,7 @@ import userRoutes from "./routes/user.route.js";
 import reviewRoutes from "./routes/review.route.js";
 import favoriteRoutes from "./routes/favorite.route.js";
 import errorHandler from "./middlewares/errorMiddleware.js";
+import cors from 'cors';
 
 const app = express();
 dotenv.config();
