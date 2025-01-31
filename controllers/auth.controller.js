@@ -67,7 +67,7 @@ const login = async (req, res) => {
   }
 };
 
-const forgetPassword = async (req, res) => {
+const requestOtp = async (req, res) => {
   const { email } = req.body;
 
   try {
@@ -91,22 +91,37 @@ const forgetPassword = async (req, res) => {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
-
-const resetPassword = async (req, res) => {
-  const { newPassword, otp, email } = req.body;
+const verifyOtp = async (req, res) => {
+  const { otp, email } = req.body;
 
   try {
     const user = await prisma.user.findUnique({ where: { email } });
-    if (!user) return res.status(404).json({ message: "Invalid email or OTP" }); // Check if OTP has expired
+    if (!user) return res.status(404).json({ message: "Invalid email or OTP" });
 
+    // Check if OTP has expired
     if (new Date() > user.resetPasswordExpiry) {
       return res.status(400).json({ message: "OTP has expired" });
     }
-    // Verify the OTP
+
+    // Verify OTP
     const isOtpValid = await bcrypt.compare(otp, user.resetPasswordToken);
     if (!isOtpValid) {
       return res.status(400).json({ message: "Invalid OTP" });
     }
+
+    res.status(200).json({ message: "OTP verified successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const resetPassword = async (req, res) => {
+  const { newPassword, email } = req.body;
+
+  try {
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
     await prisma.user.update({
@@ -120,11 +135,9 @@ const resetPassword = async (req, res) => {
 
     res.status(200).json({ message: "Password successfully reset" });
   } catch (error) {
-    res.status(500).json({
-      message: "Server error",
-      error: error.message,
-    });
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
-export { register, login, forgetPassword, resetPassword };
+
+export { register, login, requestOtp, verifyOtp , resetPassword};
