@@ -52,27 +52,33 @@ const getOrders = async (req, res, isSeller) => {
 };
 
 const confirmOrder = async (req, res) => {
-  const { paymentIntentId, carId, totalPrice, cartItemId, quantity } = req.body;
+  const { carId, totalPrice, cartItemId, quantity } = req.body;
+
   try {
-    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-    if (paymentIntent.status !== "succeeded") {
-      return res
-        .status(400)
-        .json({ error: `Payment failed: ${paymentIntent.status}` });
-    }
     const car = await prisma.car.findUnique({
       where: { id: carId },
     });
+
     if (!car) return res.status(404).json({ error: "Car not found!" });
+
     if (car.quantityInStock < quantity) {
       return res
         .status(400)
-        .json({ error: `Not enough stock available for ${car.brand}!` });
+        .json({ error: `Not enough stock for ${car.brand}!` });
     }
+
     const [order] = await prisma.$transaction([
       prisma.order.create({
         data: { totalPrice, buyerId: req.userId, cartItemId, carId, quantity },
-        include: { car: { select: { id: true } } },
+        include: {
+          car: {
+            select: {
+              brand: true,
+              coverImage: true,
+              price: true,
+            },
+          },
+        },
       }),
       prisma.car.update({
         where: { id: carId },
@@ -83,6 +89,7 @@ const confirmOrder = async (req, res) => {
       }),
       prisma.cart.delete({ where: { id: cartItemId } }),
     ]);
+
     return res.status(201).json(order);
   } catch (error) {
     return res.status(500).json({ error: error.message });
