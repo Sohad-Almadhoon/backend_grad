@@ -138,7 +138,29 @@ const getCarsStatistics = async (req, res) => {
     const cars = await prisma.car.findMany({
       where: {
         sellerId: req.userId,
+
       },
+      select: {
+        coverImage: true,
+        price: true,
+        quantityInStock: true,
+        quantitySold: true,
+        brand: true,
+        model: true,
+        color: true,
+      },
+      include: {
+        orders: {
+          include: {
+            buyer: {
+              select: {
+                username: true,
+                whatsapp: true,
+              }
+            }
+          }
+        }
+      }
     });
 
     const totalCars = cars.length;
