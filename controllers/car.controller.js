@@ -141,23 +141,24 @@ const getCarsStatistics = async (req, res) => {
 
       },
       select: {
-        coverImage: true,
         price: true,
         quantityInStock: true,
         quantitySold: true,
+        coverImage: true,
         brand: true,
-        model: true,
         orders: {
           select: {
             buyer: {
               select: {
                 username: true,
+                email: true,
                 whatsapp: true,
-                email : true
+              },
             }
           },
         }
       }
+        
       
     });
 
