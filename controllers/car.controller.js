@@ -142,7 +142,10 @@ const getCarsStatistics = async (req, res) => {
     });
 
     const totalCars = cars.length;
-    const totalQuantity = cars.reduce((sum, car) => sum + car.quantity, 0);
+    const totalQuantity = cars.reduce(
+      (sum, car) => sum + car.quantityInStock,
+      0
+    );
     const totalSoldQuantity = cars.reduce(
       (sum, car) => sum + car.quantitySold,
       0
@@ -152,10 +155,10 @@ const getCarsStatistics = async (req, res) => {
       0
     );
     const remainingCars = cars
-      .filter((car) => car.quantity > 0)
+      .filter((car) => car.quantityInStock > 0)
       .map((car) => ({
         ...car,
-        remainingQuantity: car.quantity,
+        remainingQuantity: car.quantityInStock,
       }));
 
     const soldCars = cars
