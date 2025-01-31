@@ -27,7 +27,12 @@ const fetchUserDetails = async (req, res) => {
     const user = await prisma.user.findUnique({
       where: {
         id: req.userId,
-      }
+      },
+      select: {
+        email: true,
+        username: true,
+        whatsapp: true,
+      },
     });
     if (!user) {
       return res.status(404).json({ error: "User not found." });
