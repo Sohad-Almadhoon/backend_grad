@@ -147,20 +147,18 @@ const getCarsStatistics = async (req, res) => {
         quantitySold: true,
         brand: true,
         model: true,
-        color: true,
-      },
-      include: {
         orders: {
-          include: {
+          select: {
             buyer: {
               select: {
                 username: true,
                 whatsapp: true,
-              }
+                email : true
             }
-          }
+          },
         }
       }
+      
     });
 
     const totalCars = cars.length;
