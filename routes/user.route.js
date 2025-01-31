@@ -9,7 +9,7 @@ import {
 const router = express.Router();
 
 router.get("/cars", verifyToken, fetchSellerCars);
-router.get("/:id", verifyToken, fetchUserDetails);
-router.put("/:id", verifyToken, updateUserDetails);
+router.get("/", verifyToken, fetchUserDetails);
+router.put("/", verifyToken, updateUserDetails);
 
 export default router;
