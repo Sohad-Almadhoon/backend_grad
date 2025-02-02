@@ -15,14 +15,49 @@ const createPaymentIntent = async (req, res) => {
   }
 };
 
-const getOrders = async (req, res, isSeller) => {
-  try {
-    if ((isSeller && !req.isSeller) || (!isSeller && req.isSeller)) {
-      return res
-        .status(403)
-        .json({ error: "You are not allowed to see these orders!" });
-    }
+const getOrdersForCar = async (req, res) => {
+  if (!req.isSeller) {
+    return res
+      .status(403)
+      .json({ error: "You are not allowed to see these orders!" });
+  }
 
+  try {
+    const orders = await prisma.order.findMany({
+      where: {
+        car: {
+          sellerId: req.userId,
+        },
+      },
+      include: {
+        buyer: {
+          select: {
+            email: true,
+            username: true,
+          },
+        },
+        car: {
+          select: {
+            brand: true,
+            coverImage: true,
+            price: true,
+          },
+        },
+      },
+    });
+
+    return res.status(200).json({
+      length: orders.length,
+      orders,
+    });
+  } catch (error) {
+    console.error("Error fetching orders for car:", error);
+    return res.status(500).json({ error: error.message });
+  }
+};
+
+const getOrdersForBuyer = async (req, res) => {
+  try {
     const orders = await prisma.order.findMany({
       where: {
         buyerId: req.userId,
@@ -44,7 +79,29 @@ const getOrders = async (req, res, isSeller) => {
       },
     });
 
-    return res.status(200).json(orders);
+    return res.status(200).json({
+      length: orders.length,
+      orders,
+    });
+  } catch (error) {
+    console.error("Error fetching orders for buyer:", error);
+    return res.status(500).json({ error: error.message });
+  }
+};
+
+const getOrders = async (req, res, isSeller) => {
+  try {
+    if ((isSeller && !req.isSeller) || (!isSeller && req.isSeller)) {
+      return res
+        .status(403)
+        .json({ error: "You are not allowed to see these orders!" });
+    }
+
+    if (!isSeller) {
+      return await getOrdersForCar(req, res);
+    } else {
+      return await getOrdersForBuyer(req, res);
+    }
   } catch (error) {
     console.error("Error fetching orders:", error);
     return res.status(500).json({ error: error.message });

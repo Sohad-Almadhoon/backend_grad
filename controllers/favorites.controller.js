@@ -26,6 +26,7 @@ const getFavorites = async (req, res) => {
             price: true,
             brand: true,
           },
+          
         },
       },
     });

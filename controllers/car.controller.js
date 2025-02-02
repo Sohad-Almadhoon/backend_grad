@@ -1,17 +1,34 @@
 import prisma from "../utils/db.js";
 
 const getCars = async (req, res) => {
-  const { country, brand, color, minPrice, maxPrice } = req.query;
+  const { country, brand, color, orderByPrice } = req.query;
   try {
     const cars = await prisma.car.findMany({
+      select: {
+        coverImage: true,
+        brand: true,
+        color: true,
+        country: true,
+        price: true,
+        fuelType: true,
+        quantityInStock: true,
+        quantitySold: true,
+        seller: {
+          select: {
+            username:true,
+            whatsapp:true
+          }
+        }
+      },
       where: {
         ...(country && { country: { contains: country, mode: "insensitive" } }),
         ...(color && { color: { equals: color, mode: "insensitive" } }),
         ...(brand && {
           brand: { equals: brand, mode: "insensitive" },
         }),
-        ...(minPrice && { price: { gte: parseFloat(minPrice) } }),
-        ...(maxPrice && { price: { lte: parseFloat(maxPrice) } }),
+      },
+      orderBy: {
+        price: orderByPrice === "desc" ? "desc" : "asc",
       },
     });
     res.status(200).json({
