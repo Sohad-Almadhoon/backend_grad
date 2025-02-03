@@ -4,13 +4,11 @@ const getCars = async (req, res) => {
   const { country, brand, color, orderByPrice } = req.query;
   try {
     const cars = await prisma.car.findMany({
-      select: {
-        seller: {
-          select: {
-            username:true,
-            whatsapp:true
-          }
-        }
+      seller: {
+        select: {
+          username: true,
+          whatsapp: true,
+        },
       },
       where: {
         ...(country && { country: { contains: country, mode: "insensitive" } }),
@@ -28,7 +26,9 @@ const getCars = async (req, res) => {
       cars,
     });
   } catch (error) {
-    res.status(500).json({ error: "Failed to fetch cars."  , error:error.message});
+    res
+      .status(500)
+      .json({ error: "Failed to fetch cars.", error: error.message });
   }
 };
 
@@ -147,7 +147,6 @@ const getCarsStatistics = async (req, res) => {
     const cars = await prisma.car.findMany({
       where: {
         sellerId: req.userId,
-
       },
       select: {
         price: true,
@@ -163,12 +162,10 @@ const getCarsStatistics = async (req, res) => {
                 email: true,
                 whatsapp: true,
               },
-            }
+            },
           },
-        }
-      }
-        
-      
+        },
+      },
     });
 
     const totalCars = cars.length;

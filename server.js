@@ -8,6 +8,7 @@ import cartRoutes from "./routes/cart.route.js";
 import userRoutes from "./routes/user.route.js";
 import reviewRoutes from "./routes/review.route.js";
 import favoriteRoutes from "./routes/favorite.route.js";
+import uplodadRoutes from "./routes/upload.route.js";
 import errorHandler from "./middlewares/errorMiddleware.js";
 import cors from 'cors';
 
@@ -25,6 +26,7 @@ const routes = {
   "/api/carts": cartRoutes,
   "/api/orders": orderRoutes,
   "/api/users": userRoutes,
+  "/api/uploads": uplodadRoutes,
 };
 Object.keys(routes).forEach((route) => app.use(route, routes[route]));
 
