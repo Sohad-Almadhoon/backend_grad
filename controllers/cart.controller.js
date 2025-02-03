@@ -5,12 +5,21 @@ const getCartItems = async (req, res) => {
     const cartItems = await prisma.cart.findMany({
       where: { buyerId },
       include: {
-        car: true,
+        car: {
+          include: {
+            seller: {
+              select: {
+                username: true,
+                whatsapp: true,
+              },
+            },
+          },
+        },
       },
     });
     res.status(200).json({
       length: cartItems.length,
-      cartItems
+      cartItems,
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -20,7 +29,7 @@ const getCartItems = async (req, res) => {
 const addItemToCart = async (req, res) => {
   const { carId, quantity } = req.body;
   try {
-    const car = await prisma.car.findUnique({ where: { id:carId } });
+    const car = await prisma.car.findUnique({ where: { id: carId } });
 
     if (!car) {
       return res.status(404).json({ error: "Car not found." });
@@ -42,7 +51,7 @@ const addItemToCart = async (req, res) => {
         buyerId: req.userId,
         carId,
         quantity,
-        totalPrice: car.price * quantity, 
+        totalPrice: car.price * quantity,
       },
     });
     res.status(201).json(cartItem);

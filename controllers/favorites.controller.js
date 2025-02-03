@@ -25,8 +25,13 @@ const getFavorites = async (req, res) => {
             coverImage: true,
             price: true,
             brand: true,
+            seller: {
+              select: {
+                username: true,
+                whatsapp: true,
+              },
+            },
           },
-          
         },
       },
     });

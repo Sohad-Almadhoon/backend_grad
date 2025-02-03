@@ -4,11 +4,13 @@ const getCars = async (req, res) => {
   const { country, brand, color, orderByPrice } = req.query;
   try {
     const cars = await prisma.car.findMany({
-      seller: {
+      include: {
+        seller: {
         select: {
           username: true,
           whatsapp: true,
         },
+      },
       },
       where: {
         ...(country && { country: { contains: country, mode: "insensitive" } }),
