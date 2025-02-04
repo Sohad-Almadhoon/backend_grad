@@ -5,12 +5,6 @@ const fetchSellerCars = async (req, res) => {
     const cars = await prisma.car.findMany({
       where: {
         sellerId: req.userId,
-      },
-      select: {
-        brand: true,
-        coverImage: true,
-        country: true,
-        price: true,
       }
     });
     res.status(200).json({

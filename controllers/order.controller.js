@@ -36,13 +36,7 @@ const getOrdersForCar = async (req, res) => {
             username: true,
           },
         },
-        car: {
-          select: {
-            brand: true,
-            coverImage: true,
-            price: true,
-          },
-        },
+        car: true
       },
     });
 
@@ -91,11 +85,11 @@ const getOrdersForBuyer = async (req, res) => {
 
 const getOrders = async (req, res, isSeller) => {
   try {
-    // if ((isSeller && !req.isSeller) || (!isSeller && req.isSeller)) {
-    //   return res
-    //     .status(403)
-    //     .json({ error: "You are not allowed to see these orders!" });
-    // }
+    if ((isSeller && !req.isSeller) || (!isSeller && req.isSeller)) {
+      return res
+        .status(403)
+        .json({ error: "You are not allowed to see these orders!" });
+    }
 
     if (isSeller) {
       return await getOrdersForCar(req, res);
