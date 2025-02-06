@@ -15,7 +15,6 @@ const fetchSellerCars = async (req, res) => {
     res.status(500).json({ error: "Failed to fetch cars." });
   }
 };
-
 const fetchUserDetails = async (req, res) => {
   try {
     const user = await prisma.user.findUnique({
@@ -50,7 +49,6 @@ const updateUserDetails = async (req, res) => {
     res.status(500).json({ error: "Failed to update user details." });
   }
 };
-
 
 export {
   fetchSellerCars,

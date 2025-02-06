@@ -36,7 +36,7 @@ const getOrdersForCar = async (req, res) => {
             username: true,
           },
         },
-        car: true
+        car: true,
       },
     });
 
@@ -58,16 +58,13 @@ const getOrdersForBuyer = async (req, res) => {
       },
       include: {
         car: {
-          select: {
-            brand: true,
-            coverImage: true,
-            price: true,
+          include: {
             seller: {
               select: {
                 username: true,
                 whatsapp: true,
-              }
-            }
+              },
+            },
           },
         },
       },
@@ -108,7 +105,7 @@ const confirmOrder = async (req, res) => {
   try {
     const cartItem = await prisma.cart.findUnique({
       where: { id: cartItemId },
-      include: { car: true }, 
+      include: { car: true },
     });
 
     if (!cartItem)
@@ -140,6 +137,5 @@ const confirmOrder = async (req, res) => {
     return res.status(500).json({ error: error.message });
   }
 };
-
 
 export { createPaymentIntent, getOrders, confirmOrder };

@@ -62,8 +62,6 @@ model Order {
   quantity   Int
   buyer      User     @relation(fields: [buyerId], references: [id])
   car        Car      @relation(fields: [carId], references: [id])
-  
-  @@unique([buyerId, carId])
 }
 
 model Review {
