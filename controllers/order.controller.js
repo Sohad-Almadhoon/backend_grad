@@ -137,5 +137,52 @@ const confirmOrder = async (req, res) => {
     return res.status(500).json({ error: error.message });
   }
 };
+const getRevenueStatistics = async (req, res) => {
+  if (!req.isSeller) {
+    return res
+      .status(403)
+      .json({ error: "You are not allowed to see these statistics!" });
+  }
 
-export { createPaymentIntent, getOrders, confirmOrder };
+  try {
+    const orders = await prisma.order.findMany({
+      where: {
+        car: {
+         sellerId: req.userId,
+       }
+      },
+      select: {
+        totalPrice: true,
+        quantity: true,
+        createdAt: true,
+      },
+    });
+    const totalRevenue = orders.reduce(
+      (sum, order) => sum + order.price * order.quantity,
+      0
+    );
+
+    // Group revenue by year
+    const yearlyRevenue = orders.reduce((acc, order) => {
+      const year = new Date(order.createdAt).getFullYear();
+      acc[year] = (acc[year] || 0) + order.price * order.quantity;
+      return acc;
+    }, {});
+
+    // Group revenue by month (YYYY-MM format)
+    const monthlyRevenue = orders.reduce((acc, order) => {
+      const month = new Date(order.createdAt).toISOString().slice(0, 7); // Format: YYYY-MM
+      acc[month] = (acc[month] || 0) + order.price * order.quantity;
+      return acc;
+    }, {});
+
+    res.status(200).json({ yearlyRevenue, monthlyRevenue, totalRevenue });
+  } catch (error) {
+    res.status(500).json({
+      error: "Failed to fetch revenue statistics.",
+      details: error.message,
+    });
+  }
+};
+
+export { createPaymentIntent, getOrders, confirmOrder, getRevenueStatistics };

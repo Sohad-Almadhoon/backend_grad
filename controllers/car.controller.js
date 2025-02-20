@@ -6,11 +6,11 @@ const getCars = async (req, res) => {
     const cars = await prisma.car.findMany({
       include: {
         seller: {
-        select: {
-          username: true,
-          whatsapp: true,
+          select: {
+            username: true,
+            whatsapp: true,
+          },
         },
-      },
       },
       where: {
         ...(country && { country: { contains: country, mode: "insensitive" } }),
@@ -138,86 +138,6 @@ const updateCar = async (req, res) => {
       .json({ error: "Failed to update car", error: error.message });
   }
 };
-
-const getCarsStatistics = async (req, res) => {
-  if (!req.isSeller) {
-    return res
-      .status(403)
-      .json({ error: "You are not allowed to see these statistics!" });
-  }
-  try {
-    const cars = await prisma.car.findMany({
-      where: {
-        sellerId: req.userId,
-      },
-      select: {
-        price: true,
-        quantityInStock: true,
-        quantitySold: true,
-        coverImage: true,
-        brand: true,
-        orders: {
-          select: {
-            buyer: {
-              select: {
-                username: true,
-                email: true,
-                whatsapp: true,
-              },
-            },
-          },
-        },
-      },
-    });
-
-    const totalCars = cars.length;
-    const totalQuantity = cars.reduce(
-      (sum, car) => sum + car.quantityInStock,
-      0
-    );
-    const totalSoldQuantity = cars.reduce(
-      (sum, car) => sum + car.quantitySold,
-      0
-    );
-    const revenue = cars.reduce(
-      (sum, car) => sum + car.price * car.quantitySold,
-      0
-    );
-    const remainingCars = cars
-      .filter((car) => car.quantityInStock > 0)
-      .map((car) => ({
-        ...car,
-        remainingQuantity: car.quantityInStock,
-      }));
-
-    const soldCars = cars
-      .filter((car) => car.quantitySold > 0)
-      .map((car) => ({
-        ...car,
-        soldQuantity: car.quantitySold,
-      }));
-
-    const soldRatio =
-      totalSoldQuantity / (totalQuantity + totalSoldQuantity) || 0;
-    const availableRatio =
-      totalQuantity / (totalQuantity + totalSoldQuantity) || 0;
-
-    res.status(200).json({
-      totalCars,
-      revenue,
-      totalQuantity,
-      totalSoldQuantity,
-      soldRatio,
-      availableRatio,
-      remainingCars,
-      soldCars,
-    });
-  } catch (error) {
-    res
-      .status(500)
-      .json({ error: "Failed to fetch car statistics.", error: error.message });
-  }
-};
 const fetchSellerDetails = async (req, res) => {
   try {
     const cars = await prisma.car.findMany({
@@ -267,10 +187,143 @@ const fetchSellerDetails = async (req, res) => {
       .json({ error: "Failed to fetch seller details.", error: error.message });
   }
 };
+const getSoldCarsStatistics = async (req, res) => {
+  if (!req.isSeller) {
+    return res
+      .status(403)
+      .json({ error: "You are not allowed to see these statistics!" });
+  }
+
+  try {
+    const soldCars = await prisma.car.findMany({
+      where: {
+        sellerId: req.userId,
+        quantitySold: { gt: 0 },
+      },
+      select: {
+        id: true,
+        brand: true,
+        price: true,
+        coverImage: true,
+        quantityInStock: true,
+        quantitySold: true,
+        reviews: {
+          select: {
+            star: true,
+          },
+        },
+
+        orders: {
+          select: {
+            buyerId: true,
+          },
+        },
+      },
+    });
+    let totalReviews = 0;
+    const formattedCars = soldCars.map((car) => {
+      const reviewCount = car.reviews.length;
+      totalReviews += reviewCount;
+
+      const averageRating =
+        reviewCount > 0
+          ? car.reviews.reduce((sum, review) => sum + review.star, 0) /
+            reviewCount
+          : 0;
+      return {
+        id: car.id,
+        brand: car.brand,
+        price: car.price,
+        coverImage: car.coverImage,
+        soldQuantity: car.quantitySold,
+        remainingQuantity: car.quantityInStock,
+        reviewCount,
+        averageRating: parseFloat(averageRating.toFixed(1)),
+        totalBuyers: new Set(car.orders.map((order) => order.buyerId)).size, // Count unique buyers
+      };
+    });
+
+    res.status(200).json({ soldCars: formattedCars });
+  } catch (error) {
+    res.status(500).json({
+      error: "Failed to fetch sold car statistics.",
+      details: error.message,
+    });
+  }
+};
+const getTopSellingCars = async (req, res) => {
+  if (!req.isSeller) {
+    return res
+      .status(403)
+      .json({ error: "You are not allowed to see these statistics!" });
+  }
+
+  try {
+    const topSellingCars = await prisma.car.findMany({
+      where: {
+        sellerId: req.userId,
+        quantitySold: { gt: 0 },
+      },
+      orderBy: {
+        quantitySold: "desc",
+      },
+      take: 5,
+      select: {
+        id: true,
+        brand: true,
+        price: true,
+        coverImage: true,
+        quantitySold: true,
+        orders: {
+          select: {
+            buyerId: true,
+          },
+        },
+        reviews: {
+          select: {
+            star: true,
+          },
+        },
+      },
+    });
+
+    let totalReviews = 0;
+
+    const formattedCars = topSellingCars.map((car) => {
+      const reviewCount = car.reviews.length; 
+      totalReviews += reviewCount; 
+      const averageRating =
+        reviewCount > 0
+          ? car.reviews.reduce((sum, review) => sum + review.star, 0) /
+            reviewCount
+          : 0;
+
+      return {
+        id: car.id,
+        name: car.name,
+        brand: car.brand,
+        price: car.price,
+        coverImage: car.coverImage,
+        soldQuantity: car.quantitySold, 
+        totalBuyers: new Set(car.orders.map((order) => order.buyerId)).size,
+        reviewCount, 
+        averageRating: parseFloat(averageRating.toFixed(1)), // Round to 1 decimal place
+      };
+    });
+
+    res.status(200).json({ soldCars:formattedCars});
+  } catch (error) {
+    res.status(500).json({
+      error: "Failed to fetch top-selling car statistics.",
+      details: error.message,
+    });
+  }
+};
 
 export {
   getCars,
-  getCarsStatistics,
+  getSoldCarsStatistics,
+  getTopSellingCars,
   getCarById,
   createCar,
   deleteCar,

@@ -3,6 +3,7 @@ import {
   confirmOrder,
   createPaymentIntent,
   getOrders,
+  getRevenueStatistics,
 } from "../controllers/order.controller.js";
 import verifyToken from "../middlewares/verifyToken.js";
 
@@ -12,5 +13,6 @@ router.get("/buyer", verifyToken, (req, res) => getOrders(req, res, false)); // 
 router.get("/seller", verifyToken, (req, res) => getOrders(req, res, true)); // Seller orders
 router.post("/payment-intent", verifyToken, createPaymentIntent); 
 router.post("/confirm", verifyToken, confirmOrder);
+router.get("/revenue", verifyToken, getRevenueStatistics);
 
 export default router;
