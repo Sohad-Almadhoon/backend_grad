@@ -1,6 +1,9 @@
 import express from "express";
 import dotenv from "dotenv";
 import bodyParser from "body-parser";
+import cors from "cors";
+
+// Routes
 import authRoutes from "./routes/auth.route.js";
 import carRoutes from "./routes/car.route.js";
 import orderRoutes from "./routes/order.route.js";
@@ -8,16 +11,22 @@ import cartRoutes from "./routes/cart.route.js";
 import userRoutes from "./routes/user.route.js";
 import reviewRoutes from "./routes/review.route.js";
 import favoriteRoutes from "./routes/favorite.route.js";
-import uplodadRoutes from "./routes/upload.route.js";
-import errorHandler from "./middlewares/errorMiddleware.js";
-import cors from 'cors';
 
-const app = express();
+// Middlewares
+import errorHandler from "./middlewares/errorMiddleware.js";
+
+// Environment Config
 dotenv.config();
-app.use(cors({ origin: '*' })); 
+
+// Initialize App
+const app = express();
+
+// Middleware Setup
+app.use(cors({ origin: "*" }));
 app.use(express.json());
 app.use(bodyParser.json());
 
+// Routes Setup
 const routes = {
   "/api/auth": authRoutes,
   "/api/cars": carRoutes,
@@ -26,12 +35,17 @@ const routes = {
   "/api/carts": cartRoutes,
   "/api/orders": orderRoutes,
   "/api/users": userRoutes,
-  "/api/uploads": uplodadRoutes,
 };
-Object.keys(routes).forEach((route) => app.use(route, routes[route]));
 
+Object.entries(routes).forEach(([path, route]) => {
+  app.use(path, route);
+});
+
+// Global Error Handler Middleware
 app.use(errorHandler);
 
-app.listen(5000, () => {
-  console.log("Backend server is running on port 5000!");
+// Start Server
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`Backend server is running on port ${PORT}`);
 });

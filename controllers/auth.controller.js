@@ -75,7 +75,7 @@ const requestOtp = async (req, res) => {
     if (!user) return res.status(404).json({ message: "User not found" });
     const otp = crypto.randomInt(100000, 999999).toString();
     const hashedOtp = await bcrypt.hash(otp, 10);
-    const expiry = new Date(Date.now() + 60 * 1000); // expires in 60 seconds
+    const expiry = new Date(Date.now() + 60 * 1000);
     await prisma.user.update({
       where: { email },
       data: { resetPasswordToken: hashedOtp, resetPasswordExpiry: expiry },

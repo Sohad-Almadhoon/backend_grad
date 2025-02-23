@@ -1,8 +1,8 @@
 import prisma from "../utils/db.js";
+import AppError from "../utils/AppError.js";
 
-const addReview = async (req, res) => {
+const addReview = async (req, res, next) => {
   const { star, desc, carId } = req.body;
-  console.log(req.body, req.userId);
   try {
     const existingReview = await prisma.review.findFirst({
       where: {
@@ -10,10 +10,10 @@ const addReview = async (req, res) => {
         carId,
       },
     });
-    if (existingReview)
-      return res
-        .status(400)
-        .json({ message: "You have already reviewed this car!." });
+
+    if (existingReview) {
+      return next(new AppError("You have already reviewed this car.", 400));
+    }
 
     const review = await prisma.review.create({
       data: {
@@ -23,10 +23,10 @@ const addReview = async (req, res) => {
         buyerId: req.userId,
       },
     });
+
     res.status(201).json(review);
   } catch (error) {
-    console.error("Error adding review:", error);
-    res.status(500).json({ error: "Failed to add review.", error:error.message });
+    next(new AppError("Failed to add review.", 500));
   }
 };
 

@@ -33,7 +33,6 @@ const getCars = async (req, res) => {
       .json({ error: "Failed to fetch cars.", error: error.message });
   }
 };
-
 const getCarById = async (req, res) => {
   const { id } = req.params;
   try {
@@ -72,23 +71,36 @@ const getCarById = async (req, res) => {
 };
 
 const createCar = async (req, res) => {
-  if (!req.isSeller)
+  if (!req.isSeller) {
     return res
       .status(403)
       .json({ error: "You are not allowed to create a car!" });
+  }
+
+  if (!req.files || req.files.length === 0) {
+    return res.status(400).json({ message: "No images uploaded" });
+  }
+
   try {
+    const imageUrls = req.files.map((file) => file.path);
+
     const car = await prisma.car.create({
       data: {
         ...req.body,
         sellerId: req.userId,
+        coverImage: imageUrls[0],
+        images: imageUrls,
       },
     });
+
+    console.log(car, "Car");
     res.status(201).json(car);
   } catch (error) {
-    res.status(500).json({ error: "Failed to add car.", error: error.message });
+    res
+      .status(500)
+      .json({ error: "Failed to add car.", details: error.message });
   }
 };
-
 const deleteCar = async (req, res) => {
   const { id } = req.params;
   if (!req.isSeller)
@@ -160,7 +172,6 @@ const fetchSellerDetails = async (req, res) => {
       return res.status(404).json({ error: "No cars found for this seller." });
     }
 
-    // Calculate total reviews and average stars
     let totalReviews = 0;
     let totalStars = 0;
 
@@ -171,7 +182,6 @@ const fetchSellerDetails = async (req, res) => {
 
     const averageStars = totalReviews > 0 ? totalStars / totalReviews : 0;
 
-    // Structure the response
     res.status(200).json({
       length: cars.length,
       seller: {
@@ -239,7 +249,7 @@ const getSoldCarsStatistics = async (req, res) => {
         remainingQuantity: car.quantityInStock,
         reviewCount,
         averageRating: parseFloat(averageRating.toFixed(1)),
-        totalBuyers: new Set(car.orders.map((order) => order.buyerId)).size, // Count unique buyers
+        totalBuyers: new Set(car.orders.map((order) => order.buyerId)).size,
       };
     });
 
@@ -290,8 +300,8 @@ const getTopSellingCars = async (req, res) => {
     let totalReviews = 0;
 
     const formattedCars = topSellingCars.map((car) => {
-      const reviewCount = car.reviews.length; 
-      totalReviews += reviewCount; 
+      const reviewCount = car.reviews.length;
+      totalReviews += reviewCount;
       const averageRating =
         reviewCount > 0
           ? car.reviews.reduce((sum, review) => sum + review.star, 0) /
@@ -304,14 +314,14 @@ const getTopSellingCars = async (req, res) => {
         brand: car.brand,
         price: car.price,
         coverImage: car.coverImage,
-        soldQuantity: car.quantitySold, 
+        soldQuantity: car.quantitySold,
         totalBuyers: new Set(car.orders.map((order) => order.buyerId)).size,
-        reviewCount, 
-        averageRating: parseFloat(averageRating.toFixed(1)), // Round to 1 decimal place
+        reviewCount,
+        averageRating: parseFloat(averageRating.toFixed(1)),
       };
     });
 
-    res.status(200).json({ soldCars:formattedCars});
+    res.status(200).json({ soldCars: formattedCars });
   } catch (error) {
     res.status(500).json({
       error: "Failed to fetch top-selling car statistics.",

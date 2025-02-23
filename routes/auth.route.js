@@ -6,13 +6,14 @@ import {
   register,
   resetPassword,
 } from "../controllers/auth.controller.js";
+import asyncHandler from "../utils/asyncHandler.js";
+
 const router = express.Router();
 
-router.post("/register", register);
-router.post("/login", login);
-router.post('/request-otp', requestOtp);
-router.post('/verify-otp', verifyOtp);
-router.post('/reset-password', resetPassword);
-
+router.post("/register", asyncHandler(register));
+router.post("/login", asyncHandler(login));
+router.post("/request-otp", asyncHandler(requestOtp));
+router.post("/verify-otp", asyncHandler(verifyOtp));
+router.post("/reset-password", asyncHandler(resetPassword));
 
 export default router;

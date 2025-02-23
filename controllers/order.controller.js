@@ -1,7 +1,8 @@
 import prisma from "../utils/db.js";
 import stripe from "../utils/stripe.js";
+import AppError from "../utils/AppError.js";
 
-const createPaymentIntent = async (req, res) => {
+const createPaymentIntent = async (req, res, next) => {
   const { totalPrice } = req.body;
   try {
     const paymentIntent = await stripe.paymentIntents.create({
@@ -11,17 +12,11 @@ const createPaymentIntent = async (req, res) => {
     });
     return res.status(200).json({ clientSecret: paymentIntent.client_secret });
   } catch (error) {
-    return res.status(500).json({ error: error.message });
+    next(new AppError(error.message, 500));
   }
 };
 
-const getOrdersForCar = async (req, res) => {
-  if (!req.isSeller) {
-    return res
-      .status(403)
-      .json({ error: "You are not allowed to see these orders!" });
-  }
-
+const getOrdersForSeller = async (req, res, next) => {
   try {
     const orders = await prisma.order.findMany({
       where: {
@@ -45,12 +40,11 @@ const getOrdersForCar = async (req, res) => {
       orders,
     });
   } catch (error) {
-    console.error("Error fetching orders for car:", error);
-    return res.status(500).json({ error: error.message });
+    next(new AppError(error.message, 500));
   }
 };
 
-const getOrdersForBuyer = async (req, res) => {
+const getOrdersForBuyer = async (req, res, next) => {
   try {
     const orders = await prisma.order.findMany({
       where: {
@@ -75,31 +69,11 @@ const getOrdersForBuyer = async (req, res) => {
       orders,
     });
   } catch (error) {
-    console.error("Error fetching orders for buyer:", error);
-    return res.status(500).json({ error: error.message });
+    next(new AppError(error.message, 500));
   }
 };
 
-const getOrders = async (req, res, isSeller) => {
-  try {
-    if ((isSeller && !req.isSeller) || (!isSeller && req.isSeller)) {
-      return res
-        .status(403)
-        .json({ error: "You are not allowed to see these orders!" });
-    }
-
-    if (isSeller) {
-      return await getOrdersForCar(req, res);
-    } else {
-      return await getOrdersForBuyer(req, res);
-    }
-  } catch (error) {
-    console.error("Error fetching orders:", error);
-    return res.status(500).json({ error: error.message });
-  }
-};
-
-const confirmOrder = async (req, res) => {
+const confirmOrder = async (req, res, next) => {
   const { carId, cartItemId } = req.body;
 
   try {
@@ -108,14 +82,13 @@ const confirmOrder = async (req, res) => {
       include: { car: true },
     });
 
-    if (!cartItem)
-      return res.status(404).json({ error: "Cart item not found!" });
+    if (!cartItem) return next(new AppError("Cart item not found!", 404));
 
     const { totalPrice, quantity, car } = cartItem;
 
-    if (!car) return res.status(404).json({ error: "Car not found!" });
+    if (!car) return next(new AppError("Car not found!", 404));
     if (car.quantityInStock < quantity) {
-      return res.status(400).json({ error: `Not enough stock available!` });
+      return next(new AppError("Not enough stock available!", 400));
     }
 
     const order = await prisma.order.create({
@@ -134,22 +107,17 @@ const confirmOrder = async (req, res) => {
 
     return res.status(201).json(order);
   } catch (error) {
-    return res.status(500).json({ error: error.message });
+    next(new AppError(error.message, 500));
   }
 };
-const getRevenueStatistics = async (req, res) => {
-  if (!req.isSeller) {
-    return res
-      .status(403)
-      .json({ error: "You are not allowed to see these statistics!" });
-  }
 
+const getRevenueStatistics = async (req, res, next) => {
   try {
     const orders = await prisma.order.findMany({
       where: {
         car: {
-         sellerId: req.userId,
-       }
+          sellerId: req.userId,
+        },
       },
       select: {
         totalPrice: true,
@@ -157,32 +125,28 @@ const getRevenueStatistics = async (req, res) => {
         createdAt: true,
       },
     });
+
     const totalRevenue = orders.reduce(
-      (sum, order) => sum + order.price * order.quantity,
+      (sum, order) => sum + order.totalPrice * order.quantity,
       0
     );
 
-    // Group revenue by year
     const yearlyRevenue = orders.reduce((acc, order) => {
       const year = new Date(order.createdAt).getFullYear();
-      acc[year] = (acc[year] || 0) + order.price * order.quantity;
+      acc[year] = (acc[year] || 0) + order.totalPrice * order.quantity;
       return acc;
     }, {});
 
-    // Group revenue by month (YYYY-MM format)
     const monthlyRevenue = orders.reduce((acc, order) => {
-      const month = new Date(order.createdAt).toISOString().slice(0, 7); // Format: YYYY-MM
-      acc[month] = (acc[month] || 0) + order.price * order.quantity;
+      const month = new Date(order.createdAt).toISOString().slice(0, 7);
+      acc[month] = (acc[month] || 0) + order.totalPrice * order.quantity;
       return acc;
     }, {});
 
     res.status(200).json({ yearlyRevenue, monthlyRevenue, totalRevenue });
   } catch (error) {
-    res.status(500).json({
-      error: "Failed to fetch revenue statistics.",
-      details: error.message,
-    });
+    next(new AppError("Failed to fetch revenue statistics.", 500));
   }
 };
 
-export { createPaymentIntent, getOrders, confirmOrder, getRevenueStatistics };
+export { createPaymentIntent, confirmOrder, getRevenueStatistics  , getOrdersForBuyer , getOrdersForSeller};
