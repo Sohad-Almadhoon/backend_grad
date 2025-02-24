@@ -82,18 +82,39 @@ const createCar = async (req, res) => {
   }
 
   try {
+    // Convert all numeric fields to appropriate types
+    const price = parseFloat(req.body.price);
+    const quantityInStock = parseInt(req.body.quantityInStock, 10);
+    const year = parseInt(req.body.year, 10);
+    const battery = parseInt(req.body.battery, 10);
+    const speed = parseFloat(req.body.speed);
+    const range = parseFloat(req.body.range);
+    const seats = parseInt(req.body.seats, 10);
+    const climate = req.body.climate === "true"; 
+
     const imageUrls = req.files.map((file) => file.path);
 
     const car = await prisma.car.create({
       data: {
-        ...req.body,
+        price: price,
+        quantityInStock: quantityInStock,
+        year: year,
+        battery: battery,
+        speed: speed,
+        range: range,
+        seats: seats,
+        color: req.body.color,
+        brand: req.body.brand,
+        country: req.body.country,
+        transmission: req.body.transmission,
+        carType: req.body.carType,
+        fuelType: req.body.fuelType,
+        climate: climate,
         sellerId: req.userId,
         coverImage: imageUrls[0],
         images: imageUrls,
       },
     });
-
-    console.log(car, "Car");
     res.status(201).json(car);
   } catch (error) {
     res
@@ -101,6 +122,7 @@ const createCar = async (req, res) => {
       .json({ error: "Failed to add car.", details: error.message });
   }
 };
+
 const deleteCar = async (req, res) => {
   const { id } = req.params;
   if (!req.isSeller)
