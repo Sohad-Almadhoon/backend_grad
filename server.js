@@ -22,7 +22,7 @@ dotenv.config();
 const app = express();
 
 // Middleware Setup
-app.use(cors({ origin: "*" }));
+app.use(cors());
 app.use(express.json());
 app.use(bodyParser.json());
 
