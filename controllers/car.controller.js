@@ -220,12 +220,6 @@ const fetchSellerDetails = async (req, res) => {
   }
 };
 const getSoldCarsStatistics = async (req, res) => {
-  if (!req.isSeller) {
-    return res
-      .status(403)
-      .json({ error: "You are not allowed to see these statistics!" });
-  }
-
   try {
     const soldCars = await prisma.car.findMany({
       where: {
@@ -239,32 +233,50 @@ const getSoldCarsStatistics = async (req, res) => {
         coverImage: true,
         quantityInStock: true,
         quantitySold: true,
+        createdAt: true, // Used for grouping by month
         reviews: {
           select: {
             star: true,
           },
         },
-
         orders: {
           select: {
             buyerId: true,
+            createdAt: true, // Used for grouping orders by month
           },
         },
       },
     });
-    let totalReviews = 0;
-    const formattedCars = soldCars.map((car) => {
-      const reviewCount = car.reviews.length;
-      totalReviews += reviewCount;
 
+    // Object to store grouped data
+    const statisticsByMonth = {};
+
+    soldCars.forEach((car) => {
+      const soldMonth = car.orders[0]?.createdAt
+        ? new Date(car.orders[0].createdAt).toISOString().slice(0, 7) // Format: YYYY-MM
+        : "Unknown";
+
+      if (!statisticsByMonth[soldMonth]) {
+        statisticsByMonth[soldMonth] = {};
+      }
+
+      if (!statisticsByMonth[soldMonth][car.brand]) {
+        statisticsByMonth[soldMonth][car.brand] = {
+          soldCars: [],
+          totalSold: 0,
+          totalRemaining: 0,
+        };
+      }
+
+      const reviewCount = car.reviews.length;
       const averageRating =
         reviewCount > 0
           ? car.reviews.reduce((sum, review) => sum + review.star, 0) /
             reviewCount
           : 0;
-      return {
+
+      statisticsByMonth[soldMonth][car.brand].soldCars.push({
         id: car.id,
-        brand: car.brand,
         price: car.price,
         coverImage: car.coverImage,
         soldQuantity: car.quantitySold,
@@ -272,10 +284,14 @@ const getSoldCarsStatistics = async (req, res) => {
         reviewCount,
         averageRating: parseFloat(averageRating.toFixed(1)),
         totalBuyers: new Set(car.orders.map((order) => order.buyerId)).size,
-      };
+      });
+
+      statisticsByMonth[soldMonth][car.brand].totalSold += car.quantitySold;
+      statisticsByMonth[soldMonth][car.brand].totalRemaining +=
+        car.quantityInStock;
     });
 
-    res.status(200).json({ soldCars: formattedCars });
+    res.status(200).json({ statisticsByMonth });
   } catch (error) {
     res.status(500).json({
       error: "Failed to fetch sold car statistics.",
@@ -283,6 +299,8 @@ const getSoldCarsStatistics = async (req, res) => {
     });
   }
 };
+
+
 const getTopSellingCars = async (req, res) => {
   if (!req.isSeller) {
     return res
