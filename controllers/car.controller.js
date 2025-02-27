@@ -315,7 +315,6 @@ const getTopSellingCars = async (req, res) => {
         },
       },
     });
-    console.log(car);
     const groupedCars = {};
 
     topSellingCars.forEach((car) => {
@@ -349,7 +348,6 @@ const getTopSellingCars = async (req, res) => {
       );
     });
 
-    // Convert sets to their actual sizes (number of unique buyers)
     Object.keys(groupedCars).forEach((brand) => {
       groupedCars[brand].totalBuyers = groupedCars[brand].totalBuyers.size;
     });
