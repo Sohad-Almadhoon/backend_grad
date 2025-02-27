@@ -291,7 +291,7 @@ const getSoldCarsStatistics = async (req, res) => {
         car.quantityInStock;
     });
 
-    res.status(200).json({ statisticsByMonth });
+    res.status(200).json({cars: statisticsByMonth });
   } catch (error) {
     res.status(500).json({
       error: "Failed to fetch sold car statistics.",
@@ -302,12 +302,6 @@ const getSoldCarsStatistics = async (req, res) => {
 
 
 const getTopSellingCars = async (req, res) => {
-  if (!req.isSeller) {
-    return res
-      .status(403)
-      .json({ error: "You are not allowed to see these statistics!" });
-  }
-
   try {
     const topSellingCars = await prisma.car.findMany({
       where: {
@@ -317,7 +311,6 @@ const getTopSellingCars = async (req, res) => {
       orderBy: {
         quantitySold: "desc",
       },
-      take: 5,
       select: {
         id: true,
         brand: true,
@@ -337,31 +330,46 @@ const getTopSellingCars = async (req, res) => {
       },
     });
 
-    let totalReviews = 0;
+    // Object to group cars by brand
+    const groupedCars = {};
 
-    const formattedCars = topSellingCars.map((car) => {
+    topSellingCars.forEach((car) => {
+      if (!groupedCars[car.brand]) {
+        groupedCars[car.brand] = {
+          totalSold: 0,
+          totalBuyers: new Set(),
+          cars: [],
+        };
+      }
+
       const reviewCount = car.reviews.length;
-      totalReviews += reviewCount;
       const averageRating =
         reviewCount > 0
           ? car.reviews.reduce((sum, review) => sum + review.star, 0) /
             reviewCount
           : 0;
 
-      return {
+      groupedCars[car.brand].cars.push({
         id: car.id,
-        name: car.name,
-        brand: car.brand,
         price: car.price,
         coverImage: car.coverImage,
         soldQuantity: car.quantitySold,
-        totalBuyers: new Set(car.orders.map((order) => order.buyerId)).size,
         reviewCount,
         averageRating: parseFloat(averageRating.toFixed(1)),
-      };
+      });
+
+      groupedCars[car.brand].totalSold += car.quantitySold;
+      car.orders.forEach((order) =>
+        groupedCars[car.brand].totalBuyers.add(order.buyerId)
+      );
     });
 
-    res.status(200).json({ soldCars: formattedCars });
+    // Convert sets to their actual sizes (number of unique buyers)
+    Object.keys(groupedCars).forEach((brand) => {
+      groupedCars[brand].totalBuyers = groupedCars[brand].totalBuyers.size;
+    });
+
+    res.status(200).json({ cars: groupedCars });
   } catch (error) {
     res.status(500).json({
       error: "Failed to fetch top-selling car statistics.",
@@ -369,6 +377,7 @@ const getTopSellingCars = async (req, res) => {
     });
   }
 };
+
 
 export {
   getCars,
