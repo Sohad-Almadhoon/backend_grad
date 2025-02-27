@@ -90,7 +90,7 @@ const createCar = async (req, res) => {
     const speed = parseFloat(req.body.speed);
     const range = parseFloat(req.body.range);
     const seats = parseInt(req.body.seats, 10);
-    const climate = req.body.climate === "true"; 
+    const climate = req.body.climate === "true";
 
     const imageUrls = req.files.map((file) => file.path);
 
@@ -226,23 +226,15 @@ const getSoldCarsStatistics = async (req, res) => {
         sellerId: req.userId,
         quantitySold: { gt: 0 },
       },
-      select: {
-        id: true,
-        brand: true,
-        price: true,
-        coverImage: true,
-        quantityInStock: true,
-        quantitySold: true,
-        createdAt: true, // Used for grouping by month
-        reviews: {
-          select: {
-            star: true,
-          },
-        },
+      include: {
         orders: {
           select: {
             buyerId: true,
-            createdAt: true, // Used for grouping orders by month
+          },
+        },
+        reviews: {
+          select: {
+            star: true,
           },
         },
       },
@@ -291,7 +283,7 @@ const getSoldCarsStatistics = async (req, res) => {
         car.quantityInStock;
     });
 
-    res.status(200).json({cars: statisticsByMonth });
+    res.status(200).json({ cars: statisticsByMonth });
   } catch (error) {
     res.status(500).json({
       error: "Failed to fetch sold car statistics.",
@@ -299,7 +291,6 @@ const getSoldCarsStatistics = async (req, res) => {
     });
   }
 };
-
 
 const getTopSellingCars = async (req, res) => {
   try {
@@ -311,12 +302,7 @@ const getTopSellingCars = async (req, res) => {
       orderBy: {
         quantitySold: "desc",
       },
-      select: {
-        id: true,
-        brand: true,
-        price: true,
-        coverImage: true,
-        quantitySold: true,
+      include: {
         orders: {
           select: {
             buyerId: true,
@@ -329,8 +315,7 @@ const getTopSellingCars = async (req, res) => {
         },
       },
     });
-
-    // Object to group cars by brand
+    console.log(car);
     const groupedCars = {};
 
     topSellingCars.forEach((car) => {
@@ -377,7 +362,6 @@ const getTopSellingCars = async (req, res) => {
     });
   }
 };
-
 
 export {
   getCars,
