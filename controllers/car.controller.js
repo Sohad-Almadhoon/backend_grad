@@ -268,11 +268,7 @@ const getSoldCarsStatistics = async (req, res) => {
           : 0;
 
       statisticsByMonth[soldMonth][car.brand].soldCars.push({
-        id: car.id,
-        price: car.price,
-        coverImage: car.coverImage,
-        soldQuantity: car.quantitySold,
-        remainingQuantity: car.quantityInStock,
+        ...car,
         reviewCount,
         averageRating: parseFloat(averageRating.toFixed(1)),
         totalBuyers: new Set(car.orders.map((order) => order.buyerId)).size,
@@ -315,6 +311,7 @@ const getTopSellingCars = async (req, res) => {
         },
       },
     });
+    console.log(topSellingCars)
     const groupedCars = {};
 
     topSellingCars.forEach((car) => {
@@ -334,12 +331,9 @@ const getTopSellingCars = async (req, res) => {
           : 0;
 
       groupedCars[car.brand].cars.push({
-        id: car.id,
-        price: car.price,
-        coverImage: car.coverImage,
-        soldQuantity: car.quantitySold,
         reviewCount,
         averageRating: parseFloat(averageRating.toFixed(1)),
+        ...car
       });
 
       groupedCars[car.brand].totalSold += car.quantitySold;
