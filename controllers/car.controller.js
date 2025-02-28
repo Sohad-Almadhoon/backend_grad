@@ -311,7 +311,6 @@ const getTopSellingCars = async (req, res) => {
         },
       },
     });
-    console.log(topSellingCars)
     const groupedCars = {};
 
     topSellingCars.forEach((car) => {
