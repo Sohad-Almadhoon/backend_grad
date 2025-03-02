@@ -1,7 +1,8 @@
 import express from "express";
 import verifyToken from "../middlewares/verifyToken.js";
 import {
-  fetchSellerCars,
+  getSellerCars,
+  getSoldCars,
   fetchUserDetails,
   updateUserDetails,
 } from "../controllers/user.controller.js";
@@ -13,7 +14,13 @@ router.get(
   "/cars",
   verifyToken,
   checkSeller("view cars"),
-  asyncHandler(fetchSellerCars)
+  asyncHandler(getSellerCars)
+);
+router.get(
+  "/sold-cars",
+  verifyToken,
+  checkSeller("view cars"),
+  asyncHandler(getSoldCars)
 );
 router.get("/", verifyToken, asyncHandler(fetchUserDetails));
 router.put("/", verifyToken, asyncHandler(updateUserDetails));
