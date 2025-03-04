@@ -221,16 +221,35 @@ const fetchSellerDetails = async (req, res) => {
 };       
 const getTopSellingCars = async (req, res) => {
   try {
+    const { month, year } = req.query; // Expecting month (1-12) and year (e.g., 2025)
+
+    if (!month || !year) {
+      return res.status(400).json({ error: "Month and year are required." });
+    }
+
+    const monthInt = parseInt(month, 10);
+    const yearInt = parseInt(year, 10);
+
     const topSellingCars = await prisma.car.findMany({
       where: {
         sellerId: req.userId,
-        quantitySold: { gt: 0 },
-      },
-      orderBy: {
-        quantitySold: "desc",
+        orders: {
+          some: {
+            createdAt: {
+              gte: new Date(yearInt, monthInt - 1, 1), // First day of the month
+              lt: new Date(yearInt, monthInt, 1), // First day of the next month
+            },
+          },
+        },
       },
       include: {
         orders: {
+          where: {
+            createdAt: {
+              gte: new Date(yearInt, monthInt - 1, 1),
+              lt: new Date(yearInt, monthInt, 1),
+            },
+          },
           select: {
             buyerId: true,
           },
@@ -248,7 +267,7 @@ const getTopSellingCars = async (req, res) => {
     topSellingCars.forEach((car) => {
       if (!groupedCars[car.brand]) {
         groupedCars[car.brand] = {
-          brand: car.brand, // Now included inside the object
+          brand: car.brand,
           totalSold: 0,
           totalBuyers: new Set(),
           cars: [],
@@ -264,11 +283,12 @@ const getTopSellingCars = async (req, res) => {
 
       groupedCars[car.brand].cars.push({
         ...car,
+        quantitySold: car.orders.length,
         reviewCount,
         averageRating: parseFloat(averageRating.toFixed(1)),
       });
 
-      groupedCars[car.brand].totalSold += car.quantitySold;
+      groupedCars[car.brand].totalSold += car.orders.length;
       car.orders.forEach((order) =>
         groupedCars[car.brand].totalBuyers.add(order.buyerId)
       );
@@ -282,11 +302,13 @@ const getTopSellingCars = async (req, res) => {
     res.status(200).json({ cars: Object.values(groupedCars) });
   } catch (error) {
     res.status(500).json({
-      error: "Failed to fetch top-selling car statistics.",
+      error: "Failed to fetch top-selling cars for the specified month.",
       details: error.message,
     });
   }
 };
+
+
  const getSoldCarsStatistics = async (req, res) => {
   try {
     const soldCars = await prisma.car.findMany({
