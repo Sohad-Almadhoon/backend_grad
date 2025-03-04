@@ -42,6 +42,7 @@ const getSoldCars = async (req, res, next) => {
     soldCars.forEach((car) => {
       if (!groupedCars[car.brand]) {
         groupedCars[car.brand] = {
+          brand: car.brand,
           totalSold: 0,
           totalBuyers: new Set(),
           cars: [],
@@ -56,9 +57,11 @@ const getSoldCars = async (req, res, next) => {
           : 0;
 
       groupedCars[car.brand].cars.push({
+        ...car,
         reviewCount,
         averageRating: parseFloat(averageRating.toFixed(1)),
-        ...car,
+        orders: car.orders,
+        reviews: car.reviews,
       });
 
       groupedCars[car.brand].totalSold += car.quantitySold;
@@ -67,11 +70,15 @@ const getSoldCars = async (req, res, next) => {
       );
     });
 
-    Object.keys(groupedCars).forEach((brand) => {
-      groupedCars[brand].totalBuyers = groupedCars[brand].totalBuyers.size;
-    });
+    // Convert Set to number and transform into an array format
+    const groupedCarsArray = Object.values(groupedCars).map((brandData) => ({
+      brand: brandData.brand,
+      totalSold: brandData.totalSold,
+      totalBuyers: brandData.totalBuyers.size,
+      cars: brandData.cars,
+    }));
 
-    res.status(200).json({ cars: groupedCars });
+    res.status(200).json({ cars: groupedCarsArray });
   } catch (error) {
     next(new AppError("Failed to fetch sold cars.", 500));
   }
