@@ -86,11 +86,6 @@ const getCarById = async (req, res) => {
 
 
 const createCar = async (req, res) => {
-  if (!req.isSeller) {
-    return res
-      .status(403)
-      .json({ error: "You are not allowed to create a car!" });
-  }
 
   if (!req.files || req.files.length === 0) {
     return res.status(400).json({ message: "No images uploaded" });
