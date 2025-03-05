@@ -78,7 +78,7 @@ const getSoldCars = async (req, res, next) => {
       cars: brandData.cars,
     }));
 
-    res.status(200).json({ cars: groupedCarsArray });
+    res.status(200).json({ soldCars: groupedCarsArray });
   } catch (error) {
     next(new AppError("Failed to fetch sold cars.", 500));
   }
