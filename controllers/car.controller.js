@@ -307,9 +307,7 @@ const getTopSellingCars = async (req, res) => {
     });
   }
 };
-
-
- const getSoldCarsStatistics = async (req, res) => {
+const getSoldCarsStatistics = async (req, res) => {
   try {
     const soldCars = await prisma.car.findMany({
       where: {
@@ -319,67 +317,45 @@ const getTopSellingCars = async (req, res) => {
       include: {
         orders: {
           select: {
-            buyerId: true,
-            createdAt: true, // Include order creation date
-          },
-        },
-        reviews: {
-          select: {
-            star: true,
+            createdAt: true,
           },
         },
       },
     });
 
-    const statistics = [];
+    const statistics = {};
 
     soldCars.forEach((car) => {
       car.orders.forEach((order) => {
-        const soldMonth = order.createdAt
-          ? new Date(order.createdAt).toISOString().slice(0, 7) // Format: YYYY-MM
-          : new Date(Date.now()).toISOString().slice(0, 7); // Use current month if no date
+        const monthName = new Date(order.createdAt).toLocaleString("en-US", {
+          month: "long",
+        });
 
-        const reviewCount = car.reviews.length;
-        const averageRating =
-          reviewCount > 0
-            ? car.reviews.reduce((sum, review) => sum + review.star, 0) /
-              reviewCount
-            : 0;
+        if (!statistics[monthName]) {
+          statistics[monthName] = [];
+        }
 
-        const existingEntry = statistics.find(
-          (entry) => entry.date === soldMonth && entry.brand === car.brand
+        const existingCar = statistics[monthName].find(
+          (entry) => entry.id === car.id
         );
 
-        if (existingEntry) {
-          existingEntry.soldCars.push({
-           ...car,
-            reviewCount,
-            averageRating: parseFloat(averageRating.toFixed(1)),
-            totalBuyers: new Set(car.orders.map((o) => o.buyerId)).size,
-          });
-
-          existingEntry.totalSold += car.quantitySold;
-          existingEntry.totalRemaining += car.quantityInStock;
+        if (existingCar) {
+          existingCar.soldQuantity += 1;
+          existingCar.remainingQuantity -= 1;
         } else {
-          statistics.push({
-            date: soldMonth, // Now an attribute
-            brand: car.brand, // Now an attribute
-            totalSold: car.quantitySold,
-            totalRemaining: car.quantityInStock,
-            soldCars: [
-              {
-                ...car,
-                reviewCount,
-                averageRating: parseFloat(averageRating.toFixed(1)),
-                totalBuyers: new Set(car.orders.map((o) => o.buyerId)).size,
-              },
-            ],
+          statistics[monthName].push({
+            id: car.id,
+            brand: car.brand,
+            model: car.model,
+            year: car.year,
+            remainingQuantity: car.quantityInStock,
+            soldQuantity: 1,
           });
         }
       });
     });
 
-    res.status(200).json({ cars: statistics });
+    res.status(200).json(statistics);
   } catch (error) {
     res.status(500).json({
       error: "Failed to fetch sold car statistics.",
@@ -387,6 +363,8 @@ const getTopSellingCars = async (req, res) => {
     });
   }
 };
+
+ 
 export {
   getCars,
   getSoldCarsStatistics,
