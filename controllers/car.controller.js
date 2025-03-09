@@ -299,7 +299,12 @@ const getTopSellingCars = async (req, res) => {
       groupedCars[brand].totalBuyers = groupedCars[brand].totalBuyers.size;
     });
 
-    res.status(200).json({ cars: Object.values(groupedCars) });
+    // **Sort by top sales (totalSold) in descending order**
+    const sortedCars = Object.values(groupedCars).sort(
+      (a, b) => b.totalSold - a.totalSold
+    );
+
+    res.status(200).json({ cars: sortedCars });
   } catch (error) {
     res.status(500).json({
       error: "Failed to fetch top-selling cars for the specified month.",
@@ -307,6 +312,7 @@ const getTopSellingCars = async (req, res) => {
     });
   }
 };
+
 const getSoldCarsStatistics = async (req, res) => {
   try {
     const soldCars = await prisma.car.findMany({
@@ -323,19 +329,22 @@ const getSoldCarsStatistics = async (req, res) => {
       },
     });
 
-    const statistics = {};
+    const statistics = [];
 
     soldCars.forEach((car) => {
       car.orders.forEach((order) => {
         const monthName = new Date(order.createdAt).toLocaleString("en-US", {
-          month: "long",
+          month: "short", // Returns "Jan", "Feb", etc.
         });
 
-        if (!statistics[monthName]) {
-          statistics[monthName] = [];
+        let monthEntry = statistics.find((entry) => entry.month === monthName);
+
+        if (!monthEntry) {
+          monthEntry = { month: monthName, cars: [] };
+          statistics.push(monthEntry);
         }
 
-        const existingCar = statistics[monthName].find(
+        const existingCar = monthEntry.cars.find(
           (entry) => entry.id === car.id
         );
 
@@ -343,7 +352,7 @@ const getSoldCarsStatistics = async (req, res) => {
           existingCar.soldQuantity += 1;
           existingCar.remainingQuantity -= 1;
         } else {
-          statistics[monthName].push({
+          monthEntry.cars.push({
             id: car.id,
             brand: car.brand,
             model: car.model,
@@ -364,7 +373,6 @@ const getSoldCarsStatistics = async (req, res) => {
   }
 };
 
- 
 export {
   getCars,
   getSoldCarsStatistics,
