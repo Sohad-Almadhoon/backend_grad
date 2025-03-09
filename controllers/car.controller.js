@@ -221,7 +221,7 @@ const fetchSellerDetails = async (req, res) => {
 };       
 const getTopSellingCars = async (req, res) => {
   try {
-    const { month, year } = req.query; // Expecting month (1-12) and year (e.g., 2025)
+    const { month, year } = req.query;
 
     if (!month || !year) {
       return res.status(400).json({ error: "Month and year are required." });
@@ -230,41 +230,47 @@ const getTopSellingCars = async (req, res) => {
     const monthInt = parseInt(month, 10);
     const yearInt = parseInt(year, 10);
 
-    const topSellingCars = await prisma.car.findMany({
+    const startDate = new Date(yearInt, monthInt - 1, 1); // First day of the month
+    const endDate = new Date(yearInt, monthInt, 1); // First day of the next month
+
+    // Fetch all orders in the given month for the seller's cars
+    const orders = await prisma.order.findMany({
       where: {
-        sellerId: req.userId,
-        orders: {
-          some: {
-            createdAt: {
-              gte: new Date(yearInt, monthInt - 1, 1), // First day of the month
-              lt: new Date(yearInt, monthInt, 1), // First day of the next month
-            },
-          },
-        },
+        createdAt: { gte: startDate, lt: endDate },
+        car: { sellerId: req.userId },
       },
-      include: {
-        orders: {
-          where: {
-            createdAt: {
-              gte: new Date(yearInt, monthInt - 1, 1),
-              lt: new Date(yearInt, monthInt, 1),
-            },
-          },
-          select: {
-            buyerId: true,
-          },
-        },
-        reviews: {
-          select: {
-            star: true,
-          },
-        },
+      select: {
+        carId: true,
+        buyerId: true,
       },
     });
 
+    if (orders.length === 0) {
+      return res.status(200).json({ cars: [] });
+    }
+
+    // Group orders by carId
+    const carOrderMap = orders.reduce((acc, order) => {
+      if (!acc[order.carId]) {
+        acc[order.carId] = { totalSold: 0, buyers: new Set() };
+      }
+      acc[order.carId].totalSold += 1;
+      acc[order.carId].buyers.add(order.buyerId);
+      return acc;
+    }, {});
+
+    // Fetch car details for the sold cars
+    const cars = await prisma.car.findMany({
+      where: { id: { in: Object.keys(carOrderMap) } },
+      include: {
+        reviews: { select: { star: true } },
+      },
+    });
+
+    // Group by brand
     const groupedCars = {};
 
-    topSellingCars.forEach((car) => {
+    cars.forEach((car) => {
       if (!groupedCars[car.brand]) {
         groupedCars[car.brand] = {
           brand: car.brand,
@@ -274,44 +280,44 @@ const getTopSellingCars = async (req, res) => {
         };
       }
 
+      const { totalSold, buyers } = carOrderMap[car.id];
       const reviewCount = car.reviews.length;
       const averageRating =
         reviewCount > 0
-          ? car.reviews.reduce((sum, review) => sum + review.star, 0) /
-            reviewCount
+          ? car.reviews.reduce((sum, review) => sum + review.star, 0) / reviewCount
           : 0;
 
       groupedCars[car.brand].cars.push({
         ...car,
-        quantitySold: car.orders.length,
+        quantitySold: totalSold,
         reviewCount,
         averageRating: parseFloat(averageRating.toFixed(1)),
       });
 
-      groupedCars[car.brand].totalSold += car.orders.length;
-      car.orders.forEach((order) =>
-        groupedCars[car.brand].totalBuyers.add(order.buyerId)
-      );
+      groupedCars[car.brand].totalSold += totalSold;
+      buyers.forEach((buyer) => groupedCars[car.brand].totalBuyers.add(buyer));
     });
 
-    // Convert totalBuyers from a Set to a number
+    // Convert Set to number
     Object.keys(groupedCars).forEach((brand) => {
       groupedCars[brand].totalBuyers = groupedCars[brand].totalBuyers.size;
     });
 
-    // **Sort by top sales (totalSold) in descending order**
+    // Sort brands by total sales
     const sortedCars = Object.values(groupedCars).sort(
       (a, b) => b.totalSold - a.totalSold
     );
 
     res.status(200).json({ cars: sortedCars });
   } catch (error) {
+    console.error("Error fetching top-selling cars:", error);
     res.status(500).json({
       error: "Failed to fetch top-selling cars for the specified month.",
       details: error.message,
     });
   }
 };
+
 
 const getSoldCarsStatistics = async (req, res) => {
   try {
