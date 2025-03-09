@@ -102,7 +102,8 @@ const confirmOrder = async (req, res, next) => {
         quantityInStock: car.quantityInStock - quantity,
       },
     });
-
+   await prisma.cart.delete({ where: { id: cartItemId } });
+    
     return res.status(201).json(order);
   } catch (error) {
     next(new AppError(error.message, 500));
