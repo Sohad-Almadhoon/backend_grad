@@ -82,7 +82,7 @@ const confirmOrder = async (req, res, next) => {
       include: { car: true },
     });
 
-    //if (!cartItem) return next(new AppError("Cart item not found!", 404));
+    if (!cartItem) return next(new AppError("Cart item not found!", 404));
 
     const { totalPrice, quantity, car } = cartItem;
 
