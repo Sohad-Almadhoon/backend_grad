@@ -158,6 +158,9 @@ const deleteCar = async (req, res) => {
     await prisma.review.deleteMany({
     where: { carId: parseInt(id) }
     });
+    await prisma.cart.deleteMany({
+    where: { carId: parseInt(id) }
+    });
     await prisma.car.delete({ where: { id: parseInt(id) } });
     res.status(200).json({ message: "Car deleted successfully." });
   } catch (error) {
