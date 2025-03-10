@@ -250,26 +250,25 @@ const getTopSellingCars = async (req, res) => {
     }
 
     // Group orders by carId
-    const carOrderMap = orders.reduce((acc, order) => {
-      if (!acc[order.carId]) {
-        acc[order.carId] = { totalSold: 0, buyers: new Set() };
+    const carOrderMap = {};
+    orders.forEach((order) => {
+      const carId = order.carId;
+      if (!carOrderMap[carId]) {
+        carOrderMap[carId] = { totalSold: 0, buyers: new Set() };
       }
-      acc[order.carId].totalSold += 1;
-      acc[order.carId].buyers.add(order.buyerId);
-      return acc;
-    }, {});
+      carOrderMap[carId].totalSold += 1;
+      carOrderMap[carId].buyers.add(order.buyerId);
+    });
 
     // Fetch car details for the sold cars
+    const carIds = Object.keys(carOrderMap).map(Number); // Convert to numbers
     const cars = await prisma.car.findMany({
-      where: { id: { in: Object.keys(carOrderMap) } },
-      include: {
-        reviews: { select: { star: true } },
-      },
+      where: { id: { in: carIds } },
+      include: { reviews: { select: { star: true } } },
     });
 
     // Group by brand
     const groupedCars = {};
-
     cars.forEach((car) => {
       if (!groupedCars[car.brand]) {
         groupedCars[car.brand] = {
@@ -280,7 +279,7 @@ const getTopSellingCars = async (req, res) => {
         };
       }
 
-      const { totalSold, buyers } = carOrderMap[car.id];
+      const { totalSold, buyers } = carOrderMap[car.id] || { totalSold: 0, buyers: new Set() };
       const reviewCount = car.reviews.length;
       const averageRating =
         reviewCount > 0
@@ -304,9 +303,7 @@ const getTopSellingCars = async (req, res) => {
     });
 
     // Sort brands by total sales
-    const sortedCars = Object.values(groupedCars).sort(
-      (a, b) => b.totalSold - a.totalSold
-    );
+    const sortedCars = Object.values(groupedCars).sort((a, b) => b.totalSold - a.totalSold);
 
     res.status(200).json({ cars: sortedCars });
   } catch (error) {
@@ -317,7 +314,6 @@ const getTopSellingCars = async (req, res) => {
     });
   }
 };
-
 
 const getSoldCarsStatistics = async (req, res) => {
   try {
