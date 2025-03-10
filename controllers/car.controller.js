@@ -151,7 +151,11 @@ const deleteCar = async (req, res) => {
         .status(403)
         .json({ error: "You are not allowed to delete this car." });
     }
+    
     await prisma.order.deleteMany({
+    where: { carId: parseInt(id) }
+    });
+    await prisma.review.deleteMany({
     where: { carId: parseInt(id) }
     });
     await prisma.car.delete({ where: { id: parseInt(id) } });
