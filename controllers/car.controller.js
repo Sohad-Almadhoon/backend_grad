@@ -140,10 +140,7 @@ const createCar = async (req, res) => {
 
 const deleteCar = async (req, res) => {
   const { id } = req.params;
-  if (!req.isSeller)
-    return res
-      .status(403)
-      .json({ error: "You are not allowed to delete a car!" });
+  
   try {
     const car = await prisma.car.findUnique({ where: { id: parseInt(id) } });
     if (!car) {
@@ -154,6 +151,9 @@ const deleteCar = async (req, res) => {
         .status(403)
         .json({ error: "You are not allowed to delete this car." });
     }
+    await prisma.order.deleteMany({
+    where: { carId: parseInt(id) }
+    });
     await prisma.car.delete({ where: { id: parseInt(id) } });
     res.status(200).json({ message: "Car deleted successfully." });
   } catch (error) {
