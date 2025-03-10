@@ -59,16 +59,31 @@ const getCarById = async (req, res) => {
         },
       },
     });
+
     if (!car) {
-      return res
-        .status(404)
-        .json({ error: "Car not found.", error: error.message });
+      return res.status(404).json({ error: "Car not found." });
     }
-    res.status(200).json(car);
+
+    // Calculate reviews length and average star rating
+    const reviewsLength = car.reviews.length;
+    const totalStars = car.reviews.reduce((sum, review) => sum + review.star, 0);
+    const averageStars = reviewsLength > 0 ? totalStars / reviewsLength : 0;
+
+    // Count unique buyers
+    const uniqueBuyers = new Set(car.reviews.map((review) => review.buyer.username));
+    const buyersCount = uniqueBuyers.size;
+
+    res.status(200).json({
+      ...car,
+      reviewsLength,
+      averageStars: parseFloat(averageStars.toFixed(1)), // Rounded to 1 decimal place
+      buyersCount,
+    });
   } catch (error) {
-    res.status(500).json({ error: "Failed to fetch car details." });
+    res.status(500).json({ error: "Failed to fetch car details.", details: error.message });
   }
 };
+
 
 const createCar = async (req, res) => {
   if (!req.isSeller) {
