@@ -33,6 +33,7 @@ router.post(
 router.put(
   "/:id",
   verifyToken,
+  imageUploader.array("images"),
   checkSeller("update a car"),
   asyncHandler(updateCar)
 );
