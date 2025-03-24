@@ -206,6 +206,7 @@ const updateCar = async (req, res) => {
     const updatedCar = await prisma.car.update({
       where: { id: parseInt(id, 10) },
       data: {
+        ...req.body,
         price,
         quantityInStock,
         year,
@@ -222,6 +223,7 @@ const updateCar = async (req, res) => {
         climate,
         coverImage: imageUrls.length > 0 ? imageUrls[0] : car.coverImage, // Keep old cover if no new images
         images: imageUrls,
+        
       },
     });
 
