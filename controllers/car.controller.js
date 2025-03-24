@@ -175,28 +175,63 @@ const deleteCar = async (req, res) => {
 
 const updateCar = async (req, res) => {
   const { id } = req.params;
+
   try {
-    if (!req.isSeller)
-      res.status(403).json({ error: "You are not allowed to update a car!" });
-    const car = await prisma.car.findUnique({ where: { id: parseInt(id) } });
-    if (car.sellerId !== req.userId) {
-      return res
-        .status(403)
-        .json({ error: "You are not allowed to update this car." });
+    const car = await prisma.car.findUnique({ where: { id: parseInt(id, 10) } });
+
+    if (!car) {
+      return res.status(404).json({ error: "Car not found." });
     }
+
+    if (car.sellerId !== req.userId) {
+      return res.status(403).json({ error: "You are not allowed to update this car." });
+    }
+
+    // Convert numeric and boolean fields safely
+    const price = req.body.price ? parseFloat(req.body.price) : car.price;
+    const quantityInStock = req.body.quantityInStock ? parseInt(req.body.quantityInStock, 10) : car.quantityInStock;
+    const year = req.body.year ? parseInt(req.body.year, 10) : car.year;
+    const battery = req.body.battery ? parseInt(req.body.battery, 10) : car.battery;
+    const speed = req.body.speed ? parseFloat(req.body.speed) : car.speed;
+    const range = req.body.range ? parseFloat(req.body.range) : car.range;
+    const seats = req.body.seats ? parseInt(req.body.seats, 10) : car.seats;
+    const climate = req.body.climate ? req.body.climate === "true" : car.climate;
+
+    // Handle images from middleware
+    let imageUrls = car.images;
+    if (req.files && req.files.length > 0) {
+      imageUrls = req.files.map((file) => file.path);
+    }
+
     const updatedCar = await prisma.car.update({
-      where: { id: parseInt(id) },
-      data: req.body,
+      where: { id: parseInt(id, 10) },
+      data: {
+        price,
+        quantityInStock,
+        year,
+        battery,
+        speed,
+        range,
+        seats,
+        color: req.body.color || car.color,
+        brand: req.body.brand || car.brand,
+        country: req.body.country || car.country,
+        transmission: req.body.transmission || car.transmission,
+        carType: req.body.carType || car.carType,
+        fuelType: req.body.fuelType || car.fuelType,
+        climate,
+        coverImage: imageUrls.length > 0 ? imageUrls[0] : car.coverImage, // Keep old cover if no new images
+        images: imageUrls,
+      },
     });
 
     res.json(updatedCar);
   } catch (error) {
-    console.error(error);
-    res
-      .status(500)
-      .json({ error: "Failed to update car", error: error.message });
+    res.status(500).json({ error: "Failed to update car.", details: error.message });
   }
 };
+
+
 const fetchSellerDetails = async (req, res) => {
   try {
     const cars = await prisma.car.findMany({
