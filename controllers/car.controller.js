@@ -19,9 +19,9 @@ const getCars = async (req, res) => {
           brand: { equals: brand, mode: "insensitive" },
         }),
       },
-      orderBy: {
-        price: orderByPrice === "desc" ? "desc" : "asc",
-      },
+      orderBy: orderByPrice
+        ? { price: orderByPrice === "desc" ? "desc" : "asc" }
+        : { createdAt: "desc" }, // Default to sorting by createdAt
     });
     res.status(200).json({
       length: cars.length,
