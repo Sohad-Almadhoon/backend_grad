@@ -408,34 +408,30 @@ const getSoldCarsStatistics = async (req, res) => {
           statistics.push(monthEntry);
         }
 
-        const existingCar = monthEntry.cars.find(
-          (entry) => entry.id === car.id
-        );
+        const existingCar = monthEntry.cars.find((entry) => entry.id === car.id);
 
         if (existingCar) {
-          existingCar.soldQuantity += 1;
-          existingCar.remainingQuantity -= 1;
+          existingCar.quantitySold += 1;
         } else {
           monthEntry.cars.push({
             id: car.id,
             brand: car.brand,
             model: car.model,
             year: car.year,
-            remainingQuantity: car.quantityInStock,
-            soldQuantity: 1,
+            quantityInStock: car.quantityInStock,
+            quantitySold: 1,
           });
         }
       });
     });
 
-    res.status(200).json(statistics);
+    res.json(statistics);
   } catch (error) {
-    res.status(500).json({
-      error: "Failed to fetch sold car statistics.",
-      details: error.message,
-    });
+    res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
+    
 
 export {
   getCars,
