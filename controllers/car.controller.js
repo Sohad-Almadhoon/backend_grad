@@ -367,7 +367,7 @@ const getTopSellingCars = async (req, res) => {
     // Sort brands by total sales
     const sortedCars = Object.values(groupedCars).sort((a, b) => b.totalSold - a.totalSold);
 
-    res.status(200).json({ cars: sortedCars });
+    res.status(200).json({ soldCars: sortedCars });
   } catch (error) {
     console.error("Error fetching top-selling cars:", error);
     res.status(500).json({
