@@ -70,7 +70,6 @@ const getSoldCars = async (req, res, next) => {
       );
     });
 
-    // Convert Set to number and transform into an array format
     const groupedCarsArray = Object.values(groupedCars).map((brandData) => ({
       brand: brandData.brand,
       totalSold: brandData.totalSold,

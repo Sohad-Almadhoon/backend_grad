@@ -21,16 +21,14 @@ const getCars = async (req, res) => {
       },
       orderBy: orderByPrice
         ? { price: orderByPrice === "desc" ? "desc" : "asc" }
-        : { createdAt: "desc" }, // Default to sorting by createdAt
+        : { createdAt: "desc" },
     });
     res.status(200).json({
       length: cars.length,
       cars,
     });
   } catch (error) {
-    res
-      .status(500)
-      .json({ error: "Failed to fetch cars.", error: error.message });
+    next(new AppError("Failed to fetch cars.", 500));
   }
 };
 const getCarById = async (req, res) => {
@@ -59,36 +57,36 @@ const getCarById = async (req, res) => {
         },
       },
     });
-
-    if (!car) {
-      return res.status(404).json({ error: "Car not found." });
-    }
+    if (!car) return next(new AppError("Car not found.", 404));
 
     // Calculate reviews length and average star rating
     const reviewsLength = car.reviews.length;
-    const totalStars = car.reviews.reduce((sum, review) => sum + review.star, 0);
+    const totalStars = car.reviews.reduce(
+      (sum, review) => sum + review.star,
+      0
+    );
     const averageStars = reviewsLength > 0 ? totalStars / reviewsLength : 0;
 
     // Count unique buyers
-    const uniqueBuyers = new Set(car.reviews.map((review) => review.buyer.username));
+    const uniqueBuyers = new Set(
+      car.reviews.map((review) => review.buyer.username)
+    );
     const buyersCount = uniqueBuyers.size;
 
     res.status(200).json({
       ...car,
       reviewsLength,
-      averageStars: parseFloat(averageStars.toFixed(1)), // Rounded to 1 decimal place
+      averageStars: parseFloat(averageStars.toFixed(1)),
       buyersCount,
     });
   } catch (error) {
-    res.status(500).json({ error: "Failed to fetch car details.", details: error.message });
+    next(new AppError("Failed to fetch car details.", 500));
   }
 };
 
-
 const createCar = async (req, res) => {
-
   if (!req.files || req.files.length === 0) {
-    return res.status(400).json({ message: "No images uploaded" });
+    return next(new AppError("No images uploaded", 400));
   }
 
   try {
@@ -122,77 +120,72 @@ const createCar = async (req, res) => {
         climate: climate,
         sellerId: req.userId,
         coverImage: imageUrls[0],
-        images: imageUrls,
+        images: imageUrls.length > 1 ? imageUrls.slice(1) : [],
       },
     });
     res.status(201).json(car);
   } catch (error) {
-    res
-      .status(500)
-      .json({ error: "Failed to add car.", details: error.message });
+    next(new AppError("Failed to add car.", 500));
   }
 };
 
 const deleteCar = async (req, res) => {
   const { id } = req.params;
-  
+
   try {
     const car = await prisma.car.findUnique({ where: { id: parseInt(id) } });
-    if (!car) {
-      return res.status(404).json({ error: "Car not found." });
-    }
-    if (car.sellerId !== req.userId) {
-      return res
-        .status(403)
-        .json({ error: "You are not allowed to delete this car." });
-    }
-    
+    if (!car) return next(new AppError("Car not found.", 404));
+    if (car.sellerId !== req.userId)
+      return next(new AppError("Not authorized to delete this car.", 403));
     await prisma.order.deleteMany({
-    where: { carId: parseInt(id) }
+      where: { carId: parseInt(id) },
     });
     await prisma.review.deleteMany({
-    where: { carId: parseInt(id) }
+      where: { carId: parseInt(id) },
     });
     await prisma.cart.deleteMany({
-    where: { carId: parseInt(id) }
+      where: { carId: parseInt(id) },
     });
     await prisma.favorite.deleteMany({
-    where: { carId: parseInt(id) }
-    })
+      where: { carId: parseInt(id) },
+    });
     await prisma.car.delete({ where: { id: parseInt(id) } });
     res.status(200).json({ message: "Car deleted successfully." });
   } catch (error) {
-    res
-      .status(500)
-      .json({ error: "Failed to delete car.", error: error.message });
+    next(new AppError("Failed to delete car.", 500));
   }
 };
 
-const updateCar = async (req, res) => {
+const updateCar = async (req, res, next) => {
   const { id } = req.params;
 
   try {
-    const car = await prisma.car.findUnique({ where: { id: parseInt(id, 10) } });
+    const car = await prisma.car.findUnique({
+      where: { id: parseInt(id, 10) },
+    });
 
     if (!car) {
-      return res.status(404).json({ error: "Car not found." });
+      return next(new AppError("Car not found.", 404));
     }
 
     if (car.sellerId !== req.userId) {
-      return res.status(403).json({ error: "You are not allowed to update this car." });
+      return next(new AppError("You are not allowed to update this car.", 403));
     }
 
-    // Convert numeric and boolean fields safely
     const price = req.body.price ? parseFloat(req.body.price) : car.price;
-    const quantityInStock = req.body.quantityInStock ? parseInt(req.body.quantityInStock, 10) : car.quantityInStock;
+    const quantityInStock = req.body.quantityInStock
+      ? parseInt(req.body.quantityInStock, 10)
+      : car.quantityInStock;
     const year = req.body.year ? parseInt(req.body.year, 10) : car.year;
-    const battery = req.body.battery ? parseInt(req.body.battery, 10) : car.battery;
+    const battery = req.body.battery
+      ? parseInt(req.body.battery, 10)
+      : car.battery;
     const speed = req.body.speed ? parseFloat(req.body.speed) : car.speed;
     const range = req.body.range ? parseFloat(req.body.range) : car.range;
     const seats = req.body.seats ? parseInt(req.body.seats, 10) : car.seats;
-    const climate = req.body.climate ? req.body.climate === "true" : car.climate;
-
-    // Handle images from middleware
+    const climate = req.body.climate
+      ? req.body.climate === "true"
+      : car.climate;
     let imageUrls = car.images;
     if (req.files && req.files.length > 0) {
       imageUrls = req.files.map((file) => file.path);
@@ -216,39 +209,31 @@ const updateCar = async (req, res) => {
         carType: req.body.carType || car.carType,
         fuelType: req.body.fuelType || car.fuelType,
         climate,
-        coverImage: imageUrls.length > 0 ? imageUrls[0] : car.coverImage, // Keep old cover if no new images
-        images: imageUrls,
-        
+        coverImage: imageUrls.length > 0 ? imageUrls[0] : car.coverImage,
+        images: imageUrls.length > 1 ? imageUrls.slice(1) : [],
       },
     });
 
     res.json(updatedCar);
   } catch (error) {
-    res.status(500).json({ error: "Failed to update car.", details: error.message });
+    next(new AppError("Failed to update car.", 500));
   }
 };
 
-
-const fetchSellerDetails = async (req, res) => {
+const fetchSellerDetails = async (req, res, next) => {
   try {
     const cars = await prisma.car.findMany({
-      where: {
-        sellerId: req.userId,
-      },
+      where: { sellerId: req.userId },
       include: {
         reviews: true,
         seller: {
-          select: {
-            username: true,
-            email: true,
-            whatsapp: true,
-          },
+          select: { username: true, email: true, whatsapp: true },
         },
       },
     });
 
     if (!cars || cars.length === 0) {
-      return res.status(404).json({ error: "No cars found for this seller." });
+      return next(new AppError("No cars found for this seller.", 404));
     }
 
     let totalReviews = 0;
@@ -271,26 +256,24 @@ const fetchSellerDetails = async (req, res) => {
       },
     });
   } catch (error) {
-    res
-      .status(500)
-      .json({ error: "Failed to fetch seller details.", error: error.message });
+    next(new AppError("Failed to fetch seller details.", 500));
   }
-};       
-const getTopSellingCars = async (req, res) => {
+};
+
+const getTopSellingCars = async (req, res, next) => {
   try {
     const { month, year } = req.query;
 
     if (!month || !year) {
-      return res.status(400).json({ error: "Month and year are required." });
+      return next(new AppError("Month and year are required.", 400));
     }
 
     const monthInt = parseInt(month, 10);
     const yearInt = parseInt(year, 10);
 
-    const startDate = new Date(yearInt, monthInt - 1, 1); // First day of the month
-    const endDate = new Date(yearInt, monthInt, 1); // First day of the next month
+    const startDate = new Date(yearInt, monthInt - 1, 1);
+    const endDate = new Date(yearInt, monthInt, 1);
 
-    // Fetch all orders in the given month for the seller's cars
     const orders = await prisma.order.findMany({
       where: {
         createdAt: { gte: startDate, lt: endDate },
@@ -306,7 +289,6 @@ const getTopSellingCars = async (req, res) => {
       return res.status(200).json({ cars: [] });
     }
 
-    // Group orders by carId
     const carOrderMap = {};
     orders.forEach((order) => {
       const carId = order.carId;
@@ -317,14 +299,12 @@ const getTopSellingCars = async (req, res) => {
       carOrderMap[carId].buyers.add(order.buyerId);
     });
 
-    // Fetch car details for the sold cars
-    const carIds = Object.keys(carOrderMap).map(Number); // Convert to numbers
+    const carIds = Object.keys(carOrderMap).map(Number);
     const cars = await prisma.car.findMany({
       where: { id: { in: carIds } },
       include: { reviews: { select: { star: true } } },
     });
 
-    // Group by brand
     const groupedCars = {};
     cars.forEach((car) => {
       if (!groupedCars[car.brand]) {
@@ -336,11 +316,15 @@ const getTopSellingCars = async (req, res) => {
         };
       }
 
-      const { totalSold, buyers } = carOrderMap[car.id] || { totalSold: 0, buyers: new Set() };
+      const { totalSold, buyers } = carOrderMap[car.id] || {
+        totalSold: 0,
+        buyers: new Set(),
+      };
       const reviewCount = car.reviews.length;
       const averageRating =
         reviewCount > 0
-          ? car.reviews.reduce((sum, review) => sum + review.star, 0) / reviewCount
+          ? car.reviews.reduce((sum, review) => sum + review.star, 0) /
+            reviewCount
           : 0;
 
       groupedCars[car.brand].cars.push({
@@ -354,25 +338,20 @@ const getTopSellingCars = async (req, res) => {
       buyers.forEach((buyer) => groupedCars[car.brand].totalBuyers.add(buyer));
     });
 
-    // Convert Set to number
     Object.keys(groupedCars).forEach((brand) => {
       groupedCars[brand].totalBuyers = groupedCars[brand].totalBuyers.size;
     });
-
-    // Sort brands by total sales
-    const sortedCars = Object.values(groupedCars).sort((a, b) => b.totalSold - a.totalSold);
+    const sortedCars = Object.values(groupedCars).sort(
+      (a, b) => b.totalSold - a.totalSold
+    );
 
     res.status(200).json({ soldCars: sortedCars });
   } catch (error) {
-    console.error("Error fetching top-selling cars:", error);
-    res.status(500).json({
-      error: "Failed to fetch top-selling cars for the specified month.",
-      details: error.message,
-    });
+    next(new AppError("Failed to fetch top-selling cars for the specified month.", 500));
   }
 };
 
-const getSoldCarsStatistics = async (req, res) => {
+const getSoldCarsStatistics = async (req, res, next) => {
   try {
     const soldCars = await prisma.car.findMany({
       where: {
@@ -393,7 +372,7 @@ const getSoldCarsStatistics = async (req, res) => {
     soldCars.forEach((car) => {
       car.orders.forEach((order) => {
         const monthName = new Date(order.createdAt).toLocaleString("en-US", {
-          month: "short", // Returns "Jan", "Feb", etc.
+          month: "short",
         });
 
         let monthEntry = statistics.find((entry) => entry.month === monthName);
@@ -403,7 +382,9 @@ const getSoldCarsStatistics = async (req, res) => {
           statistics.push(monthEntry);
         }
 
-        const existingCar = monthEntry.cars.find((entry) => entry.id === car.id);
+        const existingCar = monthEntry.cars.find(
+          (entry) => entry.id === car.id
+        );
 
         if (existingCar) {
           existingCar.quantitySold += 1;
@@ -422,11 +403,9 @@ const getSoldCarsStatistics = async (req, res) => {
 
     res.json(statistics);
   } catch (error) {
-    res.status(500).json({ error: "Internal Server Error" });
+    next(new AppError("Internal Server Error", 500));
   }
 };
-
-    
 
 export {
   getCars,
