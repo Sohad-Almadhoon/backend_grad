@@ -1,5 +1,5 @@
 import prisma from "../utils/db.js";
-
+import AppError from '../utils/AppError.js';
 const getCars = async (req, res, next) => {
   const { country, brand, color, orderByPrice } = req.query;
   try {
