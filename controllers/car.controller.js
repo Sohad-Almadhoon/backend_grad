@@ -1,6 +1,6 @@
 import prisma from "../utils/db.js";
 
-const getCars = async (req, res) => {
+const getCars = async (req, res, next) => {
   const { country, brand, color, orderByPrice } = req.query;
   try {
     const cars = await prisma.car.findMany({
@@ -84,10 +84,12 @@ const getCarById = async (req, res) => {
   }
 };
 
-const createCar = async (req, res) => {
+const createCar = async (req, res,next) => {
   if (!req.files || req.files.length === 0) {
     return next(new AppError("No images uploaded", 400));
   }
+  console.log(req.body, " Body");
+  console.log(req.files);
 
   try {
     // Convert all numeric fields to appropriate types
@@ -129,7 +131,7 @@ const createCar = async (req, res) => {
   }
 };
 
-const deleteCar = async (req, res) => {
+const deleteCar = async (req, res , next) => {
   const { id } = req.params;
 
   try {
