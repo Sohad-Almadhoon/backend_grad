@@ -88,8 +88,6 @@ const createCar = async (req, res,next) => {
   if (!req.files || req.files.length === 0) {
     return next(new AppError("No images uploaded", 400));
   }
-  console.log(req.body, " Body");
-  console.log(req.files);
 
   try {
     // Convert all numeric fields to appropriate types
