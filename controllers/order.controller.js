@@ -74,37 +74,67 @@ const getOrdersForBuyer = async (req, res, next) => {
 };
 
 const confirmOrder = async (req, res, next) => {
-  const { carId, cartItemId } = req.body;
+  const { cartItemIds } = req.body; // Accept array of cart item IDs or single ID
 
   try {
-    const cartItem = await prisma.cart.findUnique({
-      where: { id: cartItemId },
+    const itemIds = Array.isArray(cartItemIds) ? cartItemIds : [cartItemIds];
+
+    // Fetch all cart items
+    const cartItems = await prisma.cart.findMany({
+      where: {
+        id: { in: itemIds },
+        buyerId: req.userId,
+      },
       include: { car: true },
     });
 
-    if (!cartItem) return next(new AppError("Cart item not found!", 404));
-
-    const { totalPrice, quantity, car } = cartItem;
-
-    if (!car) return next(new AppError("Car not found!", 404));
-    if (car.quantityInStock < quantity) {
-      return next(new AppError("Not enough stock available!", 400));
+    if (cartItems.length === 0) {
+      return next(new AppError("No cart items found!", 404));
     }
 
-    const order = await prisma.order.create({
-      data: { totalPrice, buyerId: req.userId, carId, quantity },
-    });
+    // Validate stock for all items before creating any orders
+    for (const item of cartItems) {
+      if (!item.car) {
+        return next(
+          new AppError(`Car not found for cart item ${item.id}!`, 404),
+        );
+      }
+      if (item.car.quantityInStock < item.quantity) {
+        return next(
+          new AppError(
+            `Not enough stock for ${item.car.brand}. Available: ${item.car.quantityInStock}, Requested: ${item.quantity}`,
+            400,
+          ),
+        );
+      }
+    }
 
-    await prisma.car.update({
-      where: { id: carId },
-      data: {
-        quantitySold: car.quantitySold + quantity,
-        quantityInStock: car.quantityInStock - quantity,
-      },
+    // Create orders and update stock for each item
+    const orders = [];
+    for (const cartItem of cartItems) {
+      const { totalPrice, quantity, car, carId } = cartItem;
+
+      const order = await prisma.order.create({
+        data: { totalPrice, buyerId: req.userId, carId, quantity },
+      });
+
+      await prisma.car.update({
+        where: { id: carId },
+        data: {
+          quantitySold: car.quantitySold + quantity,
+          quantityInStock: car.quantityInStock - quantity,
+        },
+      });
+
+      await prisma.cart.delete({ where: { id: cartItem.id } });
+
+      orders.push(order);
+    }
+
+    return res.status(201).json({
+      message: `Successfully created ${orders.length} order(s)`,
+      orders,
     });
-   await prisma.cart.delete({ where: { id: cartItemId } });
-    
-    return res.status(201).json(order);
   } catch (error) {
     next(new AppError(error.message, 500));
   }
@@ -126,19 +156,19 @@ const getRevenueStatistics = async (req, res, next) => {
     });
 
     const totalRevenue = orders.reduce(
-      (sum, order) => sum + order.totalPrice * order.quantity,
-      0
+      (sum, order) => sum + Number(order.totalPrice),
+      0,
     );
 
     const yearlyRevenue = orders.reduce((acc, order) => {
       const year = new Date(order.createdAt).getFullYear();
-      acc[year] = (acc[year] || 0) + order.totalPrice * order.quantity;
+      acc[year] = (acc[year] || 0) + Number(order.totalPrice);
       return acc;
     }, {});
 
     const monthlyRevenue = orders.reduce((acc, order) => {
       const month = new Date(order.createdAt).toISOString().slice(0, 7);
-      acc[month] = (acc[month] || 0) + order.totalPrice * order.quantity;
+      acc[month] = (acc[month] || 0) + Number(order.totalPrice);
       return acc;
     }, {});
 
@@ -148,4 +178,10 @@ const getRevenueStatistics = async (req, res, next) => {
   }
 };
 
-export { createPaymentIntent, confirmOrder, getRevenueStatistics  , getOrdersForBuyer , getOrdersForSeller};
+export {
+  createPaymentIntent,
+  confirmOrder,
+  getRevenueStatistics,
+  getOrdersForBuyer,
+  getOrdersForSeller,
+};

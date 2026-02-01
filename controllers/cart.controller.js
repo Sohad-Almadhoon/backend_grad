@@ -85,6 +85,18 @@ const updateCartItem = async (req, res, next) => {
         quantity,
         totalPrice: newTotalPrice,
       },
+      include: {
+        car: {
+          include: {
+            seller: {
+              select: {
+                username: true,
+                whatsapp: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     res.status(200).json(updatedCartItem);
